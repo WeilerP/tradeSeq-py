@@ -1,0 +1,4 @@
+matplotlib
+# TODO(michalk8): pin from below
+numpy
+pandas
