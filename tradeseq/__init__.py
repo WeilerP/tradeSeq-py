@@ -1,6 +1,4 @@
-from tradeseq._base import TestABC
-import tradeseq.inter
-import tradeseq.intra
+from tradeseq._base import Test
 
 __author__ = ""
 __maintainer__ = "Michal Klein"

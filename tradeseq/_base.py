@@ -1,16 +1,24 @@
+from io import StringIO
 from abc import ABC, abstractmethod
 from typing import Any, Sized, Tuple, Union, Literal, Optional, Sequence, TYPE_CHECKING
+from contextlib import redirect_stderr
+import sys
+import multiprocessing
 
 from anndata import AnnData
 from scipy.sparse import issparse
 from rpy2.robjects import numpy2ri, pandas2ri
+from rpy2.robjects.packages import importr
 from rpy2.robjects.conversion import localconverter
+from rpy2.rinterface_lib.embedded import RRuntimeError
 import rpy2.robjects as ro
 
 import numpy as np
 import pandas as pd
 
 from tradeseq._backend._base import TradeSeqTest, _load_library
+
+_PARALLEL = importr("BiocParallel")
 
 
 class TestABC(ABC):
@@ -42,18 +50,58 @@ class Test(TestABC, ABC):
         layer: Optional[str] = None,
         lineage_key: str = "lineages",
         pseudotime_key: str = "pseudotime",
-        use_raw: bool = False,
+        use_raw: Optional[bool] = None,
         genes: Optional[Union[str, Sequence[str]]] = None,
+        # TODO(michalk8): Gamma and inverse.gaussian?
+        family: Literal["nb", "gaussian", "poisson", "binomial"] = "nb",
+        n_knots: int = 6,
+        offset: Optional[np.ndarray] = None,
+        n_workers: Optional[int] = None,
+        verbose: bool = False,
         **kwargs: Any,
     ) -> "TestABC":
         library, _ = _load_library()
+
+        if offset is not None:
+            offset = np.asarray(offset).ravel()
+            if offset.shape != (self.adata.n_obs,):
+                raise ValueError("TODO")
+            kwargs["offset"] = (
+                ro.vectors.FloatVector(offset) if np.issubdtype(offset.dtype, float) else ro.vectors.IntVector(offset)
+            )
+
+        bpparam = _PARALLEL.bpparam()
+        if n_workers in (None, 1):
+            kwargs["parallel"] = False
+        else:
+            kwargs["parallel"] = True
+            bpparam.slots[".xData"]["workers"] = _get_n_workers(n_workers)
+            bpparam.slots[".xData"]["progressbar"] = verbose
+        kwargs["BPPARAM"] = bpparam
+        kwargs.pop("genes", None)
+
+        if family == "nb" and use_raw is None:
+            use_raw = True
 
         counts, self._genes = self._get_counts(layer, genes=genes, use_raw=use_raw)
         lineages, self._lineages = self._get_lineage(lineage_key)
         pseudotime = self._get_pseudotime(pseudotime_key, n_lineages=lineages.shape[1])
 
-        with localconverter(ro.default_converter + numpy2ri.converter + pandas2ri.converter):
-            self._model = library.fitGAM(counts, cellWeights=lineages, pseudotime=pseudotime, **kwargs)
+        with redirect_stderr(sys.stderr if verbose else StringIO()):
+            with localconverter(ro.default_converter + numpy2ri.converter + pandas2ri.converter):
+                try:
+                    self._model = library.fitGAM(
+                        counts,
+                        cellWeights=lineages,
+                        pseudotime=pseudotime,
+                        nknots=n_knots,
+                        family=family,
+                        sce=True,
+                        verbose=False,
+                        **kwargs,
+                    )
+                except RRuntimeError as e:
+                    raise RuntimeError(str(e)) from None
 
         return self
 
@@ -154,10 +202,21 @@ class Test(TestABC, ABC):
         else:
             n_genes, n_lineages = len(self._genes), len(self._lineages)
 
-        return f"n_genes={n_genes}, n_lineages={n_lineages}"
+        return f"genes={n_genes}, lineages={n_lineages}"
 
     def __repr__(self) -> str:
         return f"{self.__class__.__name__}[{self._format_params()}]"
 
     def __str__(self) -> str:
         return f"{self.__class__.__name__}[{self._format_params()}]"
+
+
+def _get_n_workers(n: Optional[int]) -> int:
+    if n is None or n == 1:
+        return 1
+    if n == 0:
+        raise ValueError("Number of workers cannot be `0`.")
+    if n < 0:
+        return multiprocessing.cpu_count() + 1 + n
+
+    return n

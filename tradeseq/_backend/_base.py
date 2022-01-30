@@ -11,7 +11,7 @@ from typing import (
     TYPE_CHECKING,
 )
 
-from rpy2.robjects import numpy2ri, pandas2ri
+from rpy2.robjects import pandas2ri
 from packaging.version import parse, Version, LegacyVersion
 from rpy2.robjects.packages import importr, InstalledSTPackage, PackageNotInstalledError
 from rpy2.robjects.conversion import localconverter
@@ -38,7 +38,7 @@ class TradeSeqTest(ABC):
         pass
 
     def __call__(self, **kwargs: Any) -> pd.DataFrame:
-        with localconverter(ro.default_converter + pandas2ri.converter + numpy2ri.converter):
+        with localconverter(ro.default_converter + pandas2ri.converter):
             try:
                 return self._call(**kwargs)
             except RRuntimeError as e:
