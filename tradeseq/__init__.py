@@ -1,3 +1,5 @@
+from tradeseq._base import Test
+
 __author__ = ""
 __maintainer__ = "Michal Klein"
 __email__ = ""
