@@ -40,17 +40,16 @@ class AssociationTest(TradeSeqTest):
         inverse: Literal["eigen", "Chol", "QR", "generalized"] = "Chol",
         **__: Any,
     ) -> pd.DataFrame:
-        if contrast_type not in ("start", "end", "consecutive"):
-            raise ValueError("TODO")
-
         library, version = _load_library()
 
         kwargs = {"global": glob, "nPoints": n_points, "contrastType": contrast_type, "inverse": inverse}
         if n_points is None:
             kwargs.pop("nPoints")
-        if version <= parse("1.5.0"):
+        if version <= parse("1.5.0"):  # TODO(michalk8): check this
             kwargs.pop("contrastType")
             kwargs.pop("inverse")
+        elif contrast_type not in ("start", "end", "consecutive"):
+            raise ValueError("TODO: invalid contrast type")
 
         return library.associationTest(self._model, lineages=lineages, l2fc=l2fc, **kwargs)
 

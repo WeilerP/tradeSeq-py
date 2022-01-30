@@ -65,7 +65,7 @@ class Test(TestABC, ABC):
         if offset is not None:
             offset = np.asarray(offset).ravel()
             if offset.shape != (self.adata.n_obs,):
-                raise ValueError("TODO")
+                raise ValueError("TODO: Invalid offset shape.")
             kwargs["offset"] = (
                 ro.vectors.FloatVector(offset) if np.issubdtype(offset.dtype, float) else ro.vectors.IntVector(offset)
             )
@@ -80,9 +80,7 @@ class Test(TestABC, ABC):
         kwargs["BPPARAM"] = bpparam
         kwargs.pop("genes", None)
 
-        if family == "nb" and use_raw is None:
-            use_raw = True
-
+        use_raw = family == "nb" if use_raw is None else use_raw
         counts, self._genes = self._get_counts(layer, genes=genes, use_raw=use_raw)
         lineages, self._lineages = self._get_lineage(lineage_key)
         pseudotime = self._get_pseudotime(pseudotime_key, n_lineages=lineages.shape[1])
@@ -107,7 +105,7 @@ class Test(TestABC, ABC):
 
     def predict(self, test: Literal["start_end"] = "start_end", *args: Any, **kwargs: Any) -> pd.DataFrame:
         if self._model is None:
-            raise RuntimeError("TODO")
+            raise RuntimeError("Run `.fit()` first.")
 
         test = TradeSeqTest.create(test, model=self._model)
         df = test(*args, **kwargs).set_index(self._genes)
@@ -140,7 +138,7 @@ class Test(TestABC, ABC):
         elif layer in adata.layers:
             data = adata.layers[layer]
         else:
-            raise KeyError("TODO")
+            raise KeyError("TODO: Unable to find counts.")
 
         # TODO(michalk): warn of too many genes
         return (data.A if issparse(data) else data).T, subset
@@ -155,7 +153,7 @@ class Test(TestABC, ABC):
             genes = self.adata.var[genes]
         genes = np.asarray(genes)
         if not len(genes):
-            raise ValueError("TODO")
+            raise ValueError("TODO: no genes have been selected.")
 
         if not normalize:
             return genes
@@ -189,12 +187,12 @@ class Test(TestABC, ABC):
                 if pseudotime.ndim == 1:
                     return np.repeat(pseudotime[:, None], n_lineages, axis=1)
                 if pseudotime.shape != (self.adata.n_obs, n_lineages):
-                    raise ValueError("TODO")
+                    raise ValueError("TODO: invalid pseudotime/lineage shape.")
                 return pseudotime
             except KeyError:
                 pass
 
-        raise KeyError("TODO")
+        raise KeyError("Unable to find pseudotime")
 
     def _format_params(self) -> str:
         if self._model is None:

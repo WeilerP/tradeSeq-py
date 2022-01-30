@@ -42,13 +42,13 @@ class TradeSeqTest(ABC):
             try:
                 return self._call(**kwargs)
             except RRuntimeError as e:
-                raise RuntimeError("TODO") from e
+                raise RuntimeError("TODO: calling test failed.") from e
 
     @classmethod
     def create(cls, name: Literal["start_end"], *, model: ro.RS4) -> "TradeSeqTest":
         clazz = cls._REGISTRY.get(name, None)
         if clazz is None:
-            raise ValueError(f"TODO: {cls._REGISTRY.keys()}")
+            raise ValueError(f"TODO: invalid test `{name}`, valid are {sorted(cls._REGISTRY.keys())}")
 
         return clazz(model)
 
@@ -81,6 +81,6 @@ def _load_library(*, force_reload: bool = False) -> Tuple[InstalledSTPackage, Un
     except RRuntimeError as e:
         if "there is no package called ‘tradeSeq`" not in str(e):
             raise
-        raise ImportError("TODO") from None
+        raise ImportError("TODO: unable to import `tradeSeq`") from None
     except PackageNotInstalledError:
-        raise ImportError("TODO") from None
+        raise ImportError("TODO: unable to import `tradeSeq`") from None
