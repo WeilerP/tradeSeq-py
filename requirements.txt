@@ -2,3 +2,6 @@ matplotlib
 # TODO(michalk8): pin from below
 numpy
 pandas
+anndata
+rpy2
+scipy
