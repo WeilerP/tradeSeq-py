@@ -6,3 +6,12 @@ from tradeseq._backend._test import (
     StartVsEndTest,
     AssociationTest,
 )
+
+__all__ = [
+    "DiffEndTest",
+    "EarlyDETest",
+    "PatternTest",
+    "TradeSeqTest",
+    "StartVsEndTest",
+    "AssociationTest",
+]
