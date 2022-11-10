@@ -10,14 +10,14 @@ jobs:
     # Skip CI if commit message contains `[ci skip]` in the subject
     init:
         runs-on: ubuntu-latest
-    outputs:
-        skip: ${{ steps.ci-skip-step.outputs.ci-skip }}
-    steps:
-        - uses: actions/checkout@v2
-          with:
-              fetch-depth: 0
-        - id: ci-skip-step
-          uses: mstachniuk/ci-skip@master
+        outputs:
+            skip: ${{ steps.ci-skip-step.outputs.ci-skip }}
+        steps:
+            - uses: actions/checkout@v2
+              with:
+                  fetch-depth: 0
+            - id: ci-skip-step
+              uses: mstachniuk/ci-skip@master
 
     # Check if pre-commit hooks pass
     linting:
@@ -43,9 +43,9 @@ jobs:
         runs-on: ${{ matrix.os }}
         strategy:
             fail-fast: false
-        matrix:
-            os: [ubuntu-latest, macos-latest]
-            python-version: [3.9]
+            matrix:
+                os: [ubuntu-latest, macos-latest]
+                python-version: [3.9]
         steps:
             - uses: actions/checkout@v2
             - name: Set up Python ${{ matrix.python-version }}
