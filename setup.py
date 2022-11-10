@@ -36,7 +36,7 @@ setup(
     install_requires=Path("requirements.txt").read_text("utf-8").splitlines(),
     # TODO(michalk8): add test and doc requirements
     extras_require={
-        "dev": ["pre-commit>=2.16.0"],
+        "dev": ["pre-commit>=2.16.0", "pytest>=6.2.2", "pytest-cov"],
     },
     classifiers=[
         "Development Status :: 3 - Alpha",  # TODO(michalk8): change me
