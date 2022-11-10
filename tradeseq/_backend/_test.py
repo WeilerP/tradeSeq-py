@@ -9,8 +9,11 @@ import pandas as pd
 from tradeseq._backend._base import register, TradeSeqTest, _load_library
 
 
+# TODO: Add docstrings
 @register("start_end")
 class StartVsEndTest(TradeSeqTest):
+    """TODO."""
+
     def _call(
         self,
         glob: bool = True,
@@ -28,8 +31,11 @@ class StartVsEndTest(TradeSeqTest):
         )
 
 
+# TODO: Add docstrings
 @register("association")
 class AssociationTest(TradeSeqTest):
+    """TODO."""
+
     def _call(
         self,
         glob: bool = True,
@@ -54,21 +60,31 @@ class AssociationTest(TradeSeqTest):
         return library.associationTest(self._model, lineages=lineages, l2fc=l2fc, **kwargs)
 
 
+# TODO: Add docstrings
 class InterLineageTest(TradeSeqTest, ABC):
+    """TODO."""
+
     def __init__(self, model: ro.RS4):
+        """TODO."""
         super().__init__(model)
         # TODO(michalk8): check if more than 1 lineage
 
 
+# TODO: Add docstrings
 @register("diff_end")
 class DiffEndTest(InterLineageTest):
+    """TODO."""
+
     def _call(self, glob: bool = True, pairwise: bool = False, l2fc: float = 0, **__: Any) -> pd.DataFrame:
         library, _ = _load_library()
         return library.diffEndTest(self._model, l2fc=l2fc, pairwise=pairwise, **{"global": glob})
 
 
+# TODO: Add docstrings
 @register("pattern")
 class PatternTest(InterLineageTest):
+    """TODO."""
+
     def _call(
         self,
         glob: bool = True,
@@ -93,8 +109,11 @@ class PatternTest(InterLineageTest):
         )
 
 
+# TODO: Add docstrings
 @register("early_de")
 class EarlyDETest(InterLineageTest):
+    """TODO."""
+
     def _call(
         self,
         glob: bool = True,
