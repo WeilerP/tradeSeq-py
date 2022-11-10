@@ -27,10 +27,14 @@ _LIBRARY: Optional[InstalledSTPackage] = None
 _VERSION: Optional[Union[Version, LegacyVersion]] = None
 
 
+# TODO: Add docstrings
 class TradeSeqTest(ABC):
+    """TODO."""
+
     _REGISTRY: Dict[str, Type["TradeSeqTest"]] = {}
 
     def __init__(self, model: ro.RS4):
+        """TODO."""
         self._model = model
 
     @abstractmethod
@@ -38,6 +42,7 @@ class TradeSeqTest(ABC):
         pass
 
     def __call__(self, **kwargs: Any) -> pd.DataFrame:
+        """TODO."""
         with localconverter(ro.default_converter + pandas2ri.converter):
             try:
                 return self._call(**kwargs)
@@ -46,6 +51,7 @@ class TradeSeqTest(ABC):
 
     @classmethod
     def create(cls, name: Literal["start_end"], *, model: ro.RS4) -> "TradeSeqTest":
+        """TODO."""
         clazz = cls._REGISTRY.get(name, None)
         if clazz is None:
             raise ValueError(f"TODO: invalid test `{name}`, valid are {sorted(cls._REGISTRY.keys())}")
@@ -53,7 +59,10 @@ class TradeSeqTest(ABC):
         return clazz(model)
 
 
+# TODO: Add docstrings
 def register(key: str) -> Callable[[Type[TradeSeqTest]], Type[TradeSeqTest]]:
+    """TODO."""
+
     def wrapper(clazz: Type[TradeSeqTest]) -> Type[TradeSeqTest]:
         if not issubclass(clazz, TradeSeqTest):
             raise TypeError(clazz)
@@ -63,7 +72,9 @@ def register(key: str) -> Callable[[Type[TradeSeqTest]], Type[TradeSeqTest]]:
     return wrapper
 
 
+# TODO: Add docstrings
 def _load_library(*, force_reload: bool = False) -> Tuple[InstalledSTPackage, Union[Version, LegacyVersion]]:
+    """TODO."""
     global _LIBRARY, _VERSION
 
     if _LIBRARY is not None and _VERSION is not None and not force_reload:
