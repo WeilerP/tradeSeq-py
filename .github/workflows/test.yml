@@ -10,14 +10,14 @@ jobs:
     # Skip CI if commit message contains `[ci skip]` in the subject
     init:
         runs-on: ubuntu-latest
-    outputs:
-        skip: ${{ steps.ci-skip-step.outputs.ci-skip }}
-    steps:
-        - uses: actions/checkout@v2
-          with:
-              fetch-depth: 0
-        - id: ci-skip-step
-          uses: mstachniuk/ci-skip@master
+        outputs:
+            skip: ${{ steps.ci-skip-step.outputs.ci-skip }}
+        steps:
+            - uses: actions/checkout@v2
+              with:
+                  fetch-depth: 0
+            - id: ci-skip-step
+              uses: mstachniuk/ci-skip@master
 
     # Check if pre-commit hooks pass
     linting:
@@ -37,23 +37,24 @@ jobs:
             - name: Check pre-commit compatibility
               run: pre-commit run --all-files --show-diff-on-failure
 
+    # TODO: Add installation of R packages to include unit testing
     # Run unit tests
-    test:
-        needs: linting
-        runs-on: ${{ matrix.os }}
-        strategy:
-            fail-fast: false
-        matrix:
-            os: [ubuntu-latest, macos-latest]
-            python-version: [3.9]
-        steps:
-            - uses: actions/checkout@v2
-            - name: Set up Python ${{ matrix.python-version }}
-              uses: actions/setup-python@v2
-              with:
-                  python-version: ${{ matrix.python-version }}
-            - name: Install dependencies
-              run: pip install -e ".[dev]"
-            - name: Unit tests
-              timeout-minutes: 10
-              run: python -m pytest --durations=25 --cov=tradeseq -vv
+    # test:
+    #     needs: linting
+    #     runs-on: ${{ matrix.os }}
+    #     strategy:
+    #         fail-fast: false
+    #         matrix:
+    #             os: [ubuntu-latest, macos-latest]
+    #             python-version: [3.9]
+    #     steps:
+    #         - uses: actions/checkout@v2
+    #         - name: Set up Python ${{ matrix.python-version }}
+    #           uses: actions/setup-python@v2
+    #           with:
+    #               python-version: ${{ matrix.python-version }}
+    #         - name: Install dependencies
+    #           run: pip install -e ".[dev]"
+    #         - name: Unit tests
+    #           timeout-minutes: 10
+    #           run: python -m pytest --durations=25 --cov=tradeseq -vv
