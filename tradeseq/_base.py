@@ -21,30 +21,45 @@ from tradeseq._backend._base import TradeSeqTest, _load_library
 _PARALLEL = importr("BiocParallel")
 
 
+# TODO: Add docstrings
 class TestABC(ABC):
+    """TODO."""
+
+    # TODO: Add docstrings
     def __init__(self, adata: AnnData):
+        """TODO."""
         self._adata = adata
 
+    # TODO: Add docstrings
     @abstractmethod
     def fit(self, *args: Any, **kwargs: Any) -> "TestABC":
-        pass
+        """TODO."""
 
+    # TODO: Add docstrings
     @abstractmethod
     def predict(self, *args: Any, **kwargs: Any) -> Any:
-        pass
+        """TODO."""
 
+    # TODO: Add docstrings
     @property
     def adata(self) -> AnnData:
+        """TODO."""
         return self._adata
 
 
+# TODO: Add docstrings
 class Test(TestABC, ABC):
+    """TODO."""
+
+    # TODO: Add docstrings
     def __init__(self, adata: AnnData):
+        """TODO."""
         super().__init__(adata)
         self._model = None
         self._genes: Optional[np.ndarray] = None
         self._lineages: Optional[np.ndarray] = None
 
+    # TODO: Add docstrings
     def fit(
         self,
         layer: Optional[str] = None,
@@ -60,6 +75,7 @@ class Test(TestABC, ABC):
         verbose: bool = False,
         **kwargs: Any,
     ) -> "TestABC":
+        """TODO."""
         library, _ = _load_library()
 
         if offset is not None:
@@ -103,7 +119,9 @@ class Test(TestABC, ABC):
 
         return self
 
+    # TODO: Add docstrings
     def predict(self, test: Literal["start_end"] = "start_end", *args: Any, **kwargs: Any) -> pd.DataFrame:
+        """TODO."""
         if self._model is None:
             raise RuntimeError("Run `.fit()` first.")
 
@@ -116,12 +134,14 @@ class Test(TestABC, ABC):
         }
         return df.rename(mapper, axis=1, errors="ignore")
 
+    # TODO: Add docstrings
     def _get_counts(
         self,
         layer: Optional[str] = None,
         genes: Optional[Union[str, Sequence[str]]] = None,
         use_raw: bool = False,
     ) -> Tuple[np.ndarray, np.ndarray]:
+        """TODO."""
         if use_raw and self.adata.raw is None:
             use_raw = False  # TODO(warn)
 
@@ -143,9 +163,11 @@ class Test(TestABC, ABC):
         # TODO(michalk): warn of too many genes
         return (data.A if issparse(data) else data).T, subset
 
+    # TODO: Add docstrings
     def _get_gene_subset(
         self, genes: Optional[Union[str, Sized]] = None, normalize: bool = False
     ) -> Optional[np.ndarray]:
+        """TODO."""
         if genes is None:
             return None
 
@@ -167,7 +189,9 @@ class Test(TestABC, ABC):
             return self.adata.var_names[genes]
         return genes
 
+    # TODO: Add docstrings
     def _get_lineage(self, key: str) -> Tuple[np.ndarray, np.ndarray]:
+        """TODO."""
         data = self.adata.obsm[key]
         if isinstance(data, pd.DataFrame):
             return np.asarray(data), np.array([str(c) for c in data.columns])
@@ -179,7 +203,9 @@ class Test(TestABC, ABC):
 
         return data, names
 
+    # TODO: Add docstrings
     def _get_pseudotime(self, key: str, n_lineages: int) -> np.ndarray:
+        """TODO."""
         attrs = ["obsm", "obs"] if n_lineages > 1 else ["obs", "obsm"]
         for attr in attrs:
             try:
@@ -194,7 +220,9 @@ class Test(TestABC, ABC):
 
         raise KeyError("Unable to find pseudotime")
 
+    # TODO: Add docstrings
     def _format_params(self) -> str:
+        """TODO."""
         if self._model is None:
             n_genes, n_lineages = None, None
         else:
@@ -202,14 +230,20 @@ class Test(TestABC, ABC):
 
         return f"genes={n_genes}, lineages={n_lineages}"
 
+    # TODO: Add docstrings
     def __repr__(self) -> str:
+        """TODO."""
         return f"{self.__class__.__name__}[{self._format_params()}]"
 
+    # TODO: Add docstrings
     def __str__(self) -> str:
+        """TODO."""
         return f"{self.__class__.__name__}[{self._format_params()}]"
 
 
+# TODO: Add docstrings
 def _get_n_workers(n: Optional[int]) -> int:
+    """TODO."""
     if n is None or n == 1:
         return 1
     if n == 0:
