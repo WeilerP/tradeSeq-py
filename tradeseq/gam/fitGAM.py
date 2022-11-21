@@ -183,6 +183,20 @@ class GAM:
             layer_key: Optional[str] = None,
             use_raw: bool = False,
     ) -> Tuple[np.ndarray, np.ndarray]:
+        """Retrieves gene expression counts from ``self._adata``.
+
+        Parameters
+        ----------
+        layer_key:
+            Key for the layer from which to retrieve the counts in ``self._adata`` If None, ``self._adata.X`` is used.
+        use_raw:
+            Boolean indicating whether self._adata.raw should be used if existing.
+
+        Returns
+        -------
+            A ``n_cell`` x ``n_lineage`` dense np.ndarry containing gene counts for every cell and a list containing the
+            gene names.
+        """
         # TODO: maybe add support for gene subsets?
         if use_raw and self._adata.raw is None:
             use_raw = False  # TODO(warn)
@@ -191,7 +205,7 @@ class GAM:
             data = self._adata.raw
         else:
             data = self._adata
-        genes = np.array([str(n) for n in self._adata.var_names])
+        genes = list([f"{name}" for name in self._adata.var_names])
 
         if layer_key is None:
             counts = data.X
