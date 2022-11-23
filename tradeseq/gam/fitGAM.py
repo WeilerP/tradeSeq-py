@@ -204,7 +204,8 @@ class GAM:
         Parameters
         ----------
         layer_key
-            Key for the layer from which to retrieve the counts in ``self._adata`` If ``None``, ``self._adata.X`` is used.
+            Key for the layer from which to retrieve the counts in ``self._adata`` If ``None``, ``self._adata.X`` is
+            used.
         use_raw
             Boolean indicating whether ``self._adata.raw`` should be used if existing.
 
@@ -254,7 +255,8 @@ class GAM:
         Parameters
         ----------
         layer_key
-            Key for the layer from which to retrieve the counts in ``self._adata`` If ``None``, ``self._adata.X`` is used.
+            Key for the layer from which to retrieve the counts in ``self._adata`` If ``None``, ``self._adata.X`` is
+            used.
         weights_key
             Key for cell to lineage weights,
             ``self._adata`` has to contain a weights object of shape (``self._adata.n_obs``, ``n_lineages``)
