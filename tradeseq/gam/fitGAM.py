@@ -31,7 +31,7 @@ class GAM:
 
     def predict(self):
         """TODO."""
-        pass  # TODO: add method for predicting with fitted GAMs
+        raise NotImplementedError("GAM.predict not yet implemented.")
 
     def _get_pseudotime(self, time_key: str, n_lineages: int) -> np.ndarray:
         """Retrieve pseudotime from ``self._adata``.
@@ -56,7 +56,7 @@ class GAM:
         else:
             raise KeyError(
                 f"Invalid key {time_key} for pseudotimes."
-                f"The key {time_key} must be either in adata.obs or adata.obsm"
+                f"The key `{time_key}` must be either in `adata.obs` or `adata.obsm`."
             )
 
         if pseudotime.ndim == 1:
@@ -90,7 +90,7 @@ class GAM:
         except KeyError:
             raise KeyError(
                 f"Invalid key {weights_key} for cell to lineage assignment."
-                f"The key {weights_key} must be present in adata.obsm"
+                f"The key `{weights_key}` must be present in `adata.obsm`."
             )
 
         if isinstance(data, pd.DataFrame):
@@ -107,7 +107,7 @@ class GAM:
             raise (
                 f"Invalid cell weight shape.\n"
                 f"Expected shape: ({self._adata.n_obs}, n_lineages) or ({self._adata.n_obs},).\n"
-                f"Actual shape: {data.shape}"
+                f"Actual shape: {data.shape}."
             )
 
         return weights, names
@@ -161,7 +161,7 @@ class GAM:
         replace_ids = np.array([find_closest(end_point) for end_point in end_points])
         if np.unique(replace_ids).size < np.unique(end_points).size:
             warnings.warn(
-                "Impossible to place a knot at all endpoints. Increase the number of knots to avoid this issue",
+                "Impossible to place a knot at all endpoints. Increase the number of knots to avoid this issue.",
                 RuntimeWarning,
             )
         knots[replace_ids] = end_points

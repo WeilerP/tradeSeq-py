@@ -21,6 +21,7 @@ class GAM:
 
     def predict(self):
         """TODO."""
+        raise NotImplementedError("GAM.predict not yet implemented.")
 
 
 class GAM_Fitting:
