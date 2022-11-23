@@ -10,12 +10,11 @@ class GAM:
     """GAM backend class encapsulating R gam object."""
 
     def __init__(self, gam):
-        """
-        Initialize GAM object.
+        """Initialize GAM object.
 
         Parmaeters
         ----------
-        gam:
+        gam
             rpy2 representation of fitted mgcv GAM object.
         """
         self._gam = gam
@@ -33,10 +32,10 @@ class GAM_Fitting:
         Parameters
         ----------
         pseudotimes
-            A `n_cells`` x ``n_lineage`` np.ndarray containing pseudotimes for every cell and lineage.
+            A ``n_cells`` x ``n_lineage`` np.ndarray containing pseudotimes for every cell and lineage.
         w_sample
-            A ``n_cells`` x ``n_lineage`` np.ndarray where each row contains exactly one 1 (the assigned lineage).
-            and 0 everywhere else
+            A ``n_cells`` x ``n_lineage`` np.ndarray where each row contains exactly one `1` (the assigned lineage).
+            and `0` everywhere else.
         knots
             Location of knots used for fitting the splines in the GAM.
         smooth_form
@@ -45,7 +44,7 @@ class GAM_Fitting:
             respectively.
         family
             Family of probability distributions that is used for fitting the GAM. Defaults to the negative binomial
-            distributions. Can be any family available in mgcv.gam.
+            distributions. Can be any family available in ``mgcv.gam``.
         """
         _assign_pseudotimes(pseudotimes)
         _assign_lineages(w_sample)
@@ -79,7 +78,7 @@ def _assign_pseudotimes(pseudotimes: np.ndarray):
     Parameters
     ----------
     pseudotimes
-        A `n_cells`` x ``n_lineage`` np.ndarray containing pseudotimes for every cell and lineage.
+        A ``n_cells`` x ``n_lineage`` np.ndarray containing pseudotimes for every cell and lineage.
     """
     np_cv_rules = default_converter + numpy2ri.converter
     with localconverter(np_cv_rules):
@@ -101,8 +100,8 @@ def _assign_lineages(w_sample: np.ndarray):
     Parameters
     ----------
     w_sample
-        A ``n_cells`` x ``n_lineage`` np.ndarray where each row contains exactly one 1 (the assigned lineage).
-        and 0 everywhere else
+        A ``n_cells`` x ``n_lineage`` np.ndarray where each row contains exactly one `1` (the assigned lineage).
+        and `0` everywhere else.
     """
     np_cv_rules = default_converter + numpy2ri.converter
     with localconverter(np_cv_rules):

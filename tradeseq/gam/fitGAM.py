@@ -17,12 +17,12 @@ class GAM:
     """
 
     def __init__(self, adata: AnnData):
-        """
-        Initialize GAM class.
+        """Initialize GAM class.
 
         Parameters
         ----------
-        adata: AnnData object containing the gene counts, the cell to lineage weigths and the pseudotimes
+        adata
+            AnnData object containing the gene counts, the cell to lineage weights, and the pseudotimes.
         """
         self._adata: AnnData = adata
         self._model: Optional[list[_backend.GAM]] = None
@@ -41,13 +41,13 @@ class GAM:
         time_key
             Key for pseudotime values,
             ``self._adata`` has to contain pseudotime values for every lineage
-            in ``adata.obsm[time_key]`` or ``adata.obs[time_key]``
+            in ``adata.obsm[time_key]`` or ``adata.obs[time_key]``.
         n_lineages
-            Number of lineages
+            Number of lineages.
 
         Returns
         --------
-        Array of shape (``self._adata.n_obs``,``_lineages``) containing pseudotime values for all lineages
+        Array of shape (``self._adata.n_obs``, ``n_lineages``) containing pseudotime values for all lineages.
         """
         if time_key in self._adata.obs.columns:
             pseudotime = self._adata.obs[time_key].values
@@ -78,12 +78,12 @@ class GAM:
         ----------
         weights_key
             Key for cell to lineage weights,
-            ``self._adata`` has to contain a weights object of shape (``self._adata.n_obs``, n_lineages)
+            ``self._adata`` has to contain a weights object of shape (``self._adata.n_obs``, ``n_lineages``)
             in ``adata.obsm[weights_key]``
 
         Returns
         -------
-            Tuple of cell to lineage weights as a (``self._adata.n_obs``, n_lineages) array and lineage names
+            Tuple of cell to lineage weights as a (``self._adata.n_obs``, ``n_lineages``) array and lineage names.
         """
         try:
             data = self._adata.obsm[weights_key]
@@ -120,18 +120,18 @@ class GAM:
 
         Parameters
         ----------
-        time_key:
+        time_key
             Key for pseudotime values,
             ``self._adata`` has to contain pseudotime values for every lineage
             in ``adata.obsm[time_key]`` or ``adata.obs[time_key]``
-        n_lineages:
+        n_lineages
             Number of lineages in
-        n_knots:
-            Number of knots that should be found
+        n_knots
+            Number of knots to place.
 
         Returns
         -------
-        A np.ndarray of length ``n_knots`` with the found knot locations
+        A np.ndarray of length ``n_knots`` with the found knot locations.
         """
         pseudotimes = self._get_pseudotime(time_key, n_lineages)
         quantiles = np.linspace(0.0, 1, n_knots)
@@ -203,10 +203,10 @@ class GAM:
 
         Parameters
         ----------
-        layer_key:
-            Key for the layer from which to retrieve the counts in ``self._adata`` If None, ``self._adata.X`` is used.
-        use_raw:
-            Boolean indicating whether self._adata.raw should be used if existing.
+        layer_key
+            Key for the layer from which to retrieve the counts in ``self._adata`` If ``None``, ``self._adata.X`` is used.
+        use_raw
+            Boolean indicating whether ``self._adata.raw`` should be used if existing.
 
         Returns
         -------
@@ -247,17 +247,17 @@ class GAM:
     ):
         """Fit generalized additive model for every selected gene.
 
-        The GAMs all share the same knot locations for the spline functions. For every lineage and gene an own spline
+        The GAMs all share the same knot locations for the spline functions. For every lineage and gene a single spline
         function is fitted. The cells are assigned to lineages randomly according to the given cell weights.
         TODO: add details to docstring
 
         Parameters
         ----------
         layer_key
-            Key for the layer from which to retrieve the counts in ``self._adata`` If None, ``self._adata.X`` is used.
+            Key for the layer from which to retrieve the counts in ``self._adata`` If ``None``, ``self._adata.X`` is used.
         weights_key
             Key for cell to lineage weights,
-            ``self._adata`` has to contain a weights object of shape (``self._adata.n_obs``, n_lineages)
+            ``self._adata`` has to contain a weights object of shape (``self._adata.n_obs``, ``n_lineages``)
             in ``adata.obsm[weights_key]``.
         time_key
             Key for pseudotime values,
@@ -267,10 +267,10 @@ class GAM:
             TODO
         genes
             TODO
-        n_jobs:
+        n_jobs
             TODO
         family
-            Family of probability distributions that is used for fitting the GAM. Defaults to the negative binomial
+            Family of probability distributions that is used for fitting the GAM. Defaults to the negative binomial.
             distributions. Can be any family available in mgcv.gam.
         n_knots
             Number of knots that are used for the splines in the GAM.
