@@ -106,7 +106,7 @@ class GAM:
         if weights.ndim != 2 or weights.shape[0] != self._adata.n_obs:
             raise (
                 f"Invalid cell weight shape.\n"
-                f"Expected shape: ({self._adata.n_obs}, n_lineages) or ({self._adata.n_obs},).\n"
+                f"Expected shape: ({self._adata.n_obs}, n_lineages).\n"
                 f"Actual shape: {data.shape}."
             )
 
@@ -222,7 +222,7 @@ class GAM:
             data = self._adata.raw
         else:
             data = self._adata
-        genes = [f"{name}" for name in self._adata.var_names]
+        genes = self._adata.var_names.astype(str).to_list()
 
         if layer_key is None:
             counts = data.X

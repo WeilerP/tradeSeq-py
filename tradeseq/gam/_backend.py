@@ -49,7 +49,7 @@ class GAM_Fitting:
         """
         _assign_pseudotimes(pseudotimes)
         _assign_lineages(w_sample)
-        self._knots = [float(knot) for knot in knots]  # Convert to list to make conversion to R easier
+        self._knots = knots.astype(float).tolist()  # Convert to list to make conversion to R easier
         self._smooth_form = smooth_form
         self._family = family
         self._mgcv = importr("mgcv")
