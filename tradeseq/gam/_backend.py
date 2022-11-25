@@ -1,3 +1,5 @@
+from typing import List
+
 from rpy2.robjects import numpy2ri, default_converter
 from rpy2.robjects.packages import importr
 from rpy2.robjects.conversion import localconverter
@@ -10,18 +12,18 @@ class GAM:
     """GAM backend class encapsulating R gam object."""
 
     def __init__(self, gam):
-        """
-        Initialize GAM object.
+        """Initialize GAM object.
 
         Parmaeters
         ----------
-        gam:
+        gam
             rpy2 representation of fitted mgcv GAM object.
         """
         self._gam = gam
 
     def predict(self):
         """TODO."""
+        raise NotImplementedError("GAM.predict not yet implemented.")
 
 
 class GAM_Fitting:
@@ -35,10 +37,10 @@ class GAM_Fitting:
         Parameters
         ----------
         pseudotimes
-            A `n_cells`` x ``n_lineage`` np.ndarray containing pseudotimes for every cell and lineage.
+            A ``n_cells`` x ``n_lineage`` np.ndarray containing pseudotimes for every cell and lineage.
         w_sample
-            A ``n_cells`` x ``n_lineage`` np.ndarray where each row contains exactly one 1 (the assigned lineage).
-            and 0 everywhere else
+            A ``n_cells`` x ``n_lineage`` np.ndarray where each row contains exactly one `1` (the assigned lineage).
+            and `0` everywhere else.
         knots
             Location of knots used for fitting the splines in the GAM.
         smooth_form
@@ -52,7 +54,7 @@ class GAM_Fitting:
         """
         _assign_pseudotimes(pseudotimes)
         _assign_lineages(w_sample)
-        self._knots = [float(knot) for knot in knots]  # Convert to list to make conversion to R easier
+        self._knots: List[float] = knots.astype(float).tolist()  # Convert to list to make conversion to R easier
         self._smooth_form = smooth_form
         self._family = family
         self._mgcv = importr("mgcv")
@@ -66,6 +68,7 @@ class GAM_Fitting:
             A np.ndarray of shape (``n_cells``,) containing gene expression data for a single gene.
 
         Returns
+        -------
             Fitted GAM object.
         """
         ro.globalenv["n_knots"] = len(self._knots)
@@ -82,7 +85,7 @@ def _assign_pseudotimes(pseudotimes: np.ndarray):
     Parameters
     ----------
     pseudotimes
-        A `n_cells`` x ``n_lineage`` np.ndarray containing pseudotimes for every cell and lineage.
+        A ``n_cells`` x ``n_lineage`` np.ndarray containing pseudotimes for every cell and lineage.
     """
     np_cv_rules = default_converter + numpy2ri.converter
     with localconverter(np_cv_rules):
@@ -104,8 +107,8 @@ def _assign_lineages(w_sample: np.ndarray):
     Parameters
     ----------
     w_sample
-        A ``n_cells`` x ``n_lineage`` np.ndarray where each row contains exactly one 1 (the assigned lineage).
-        and 0 everywhere else
+        A ``n_cells`` x ``n_lineage`` np.ndarray where each row contains exactly one `1` (the assigned lineage).
+        and `0` everywhere else.
     """
     np_cv_rules = default_converter + numpy2ri.converter
     with localconverter(np_cv_rules):
