@@ -27,6 +27,8 @@ class GAM:
 class GAM_Fitting:
     """Backend class used for fitting GAMs in R for multiple genes."""
 
+    # TODO: go directly to mgcv.gam by clicking
+
     def __init__(self, pseudotimes: np.ndarray, w_sample: np.ndarray, knots: np.ndarray, smooth_form: str, family: str):
         """Initialize class and assing pseudotime and cell_weight values to corresponding variales in R.
 
@@ -46,6 +48,7 @@ class GAM_Fitting:
         family
             Family of probability distributions that is used for fitting the GAM. Defaults to the negative binomial
             distributions. Can be any family available in mgcv.gam.
+            TODO: change type hint to Literal
         """
         _assign_pseudotimes(pseudotimes)
         _assign_lineages(w_sample)
@@ -54,7 +57,7 @@ class GAM_Fitting:
         self._family = family
         self._mgcv = importr("mgcv")
 
-    def fit_gam(self, y: np.ndarray) -> GAM:
+    def fit(self, y: np.ndarray) -> GAM:
         """Fit GAM for a single gene.
 
         Parameters
@@ -86,10 +89,10 @@ def _assign_pseudotimes(pseudotimes: np.ndarray):
         ro.globalenv["pseudotimes"] = pseudotimes
     ro.r(
         """
-    for (lineage_id in seq_len(ncol(pseudotimes))) {
-        assign(paste0("t",lineage_id), pseudotimes[,lineage_id])
-    }
-    """
+        for (lineage_id in seq_len(ncol(pseudotimes))) {
+            assign(paste0("t",lineage_id), pseudotimes[,lineage_id])
+        }
+        """
     )
 
 
@@ -109,8 +112,8 @@ def _assign_lineages(w_sample: np.ndarray):
         ro.globalenv["w_sample"] = w_sample
     ro.r(
         """
-    for (lineage_id in seq_len(ncol(w_sample))) {
-        assign(paste0("l", lineage_id), 1 * (w_sample[, lineage_id] == 1))
-    }
-    """
+        for (lineage_id in seq_len(ncol(w_sample))) {
+            assign(paste0("l", lineage_id), 1 * (w_sample[, lineage_id] == 1))
+        }
+        """
     )

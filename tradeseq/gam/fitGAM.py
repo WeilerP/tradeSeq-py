@@ -39,9 +39,8 @@ class GAM:
         Parameters
         ----------
         time_key
-            Key for pseudotime values,
-            ``self._adata`` has to contain pseudotime values for every lineage
-            in ``adata.obsm[time_key]`` or ``adata.obs[time_key]``
+            Key for pseudotime values. ``self._adata`` has to contain pseudotime values for every lineage
+            in ``adata.obsm[time_key]`` or ``adata.obs[time_key]``.
         n_lineages
             Number of lineages
 
@@ -69,6 +68,12 @@ class GAM:
                 f"Actual shape: {pseudotime.shape}"
             )
 
+        if pseudotime.max(axis=0).argmax() != 0:
+            warnings.warn(
+                "First lineage is not the longest lineage (i.e. the lineage with the greatest pseudotime value).",
+                RuntimeWarning,
+            )
+
         return pseudotime
 
     def _get_lineage(self, weights_key: str) -> Tuple[np.ndarray, list]:
@@ -77,9 +82,8 @@ class GAM:
         Parameters
         ----------
         weights_key
-            Key for cell to lineage weights,
-            ``self._adata`` has to contain a weights object of shape (``self._adata.n_obs``, n_lineages)
-            in ``adata.obsm[weights_key]``
+            Key for cell to lineage weights. ``self._adata`` has to contain a weights object of
+            shape (``self._adata.n_obs``, n_lineages) in ``adata.obsm[weights_key]``.
 
         Returns
         -------
@@ -93,6 +97,7 @@ class GAM:
                 f"The key {weights_key} must be present in adata.obsm"
             )
 
+        # TODO: use single dispatch
         if isinstance(data, pd.DataFrame):
             weights = data.values
             names = data.columns.astype(str).to_list()
@@ -121,17 +126,16 @@ class GAM:
         Parameters
         ----------
         time_key:
-            Key for pseudotime values,
-            ``self._adata`` has to contain pseudotime values for every lineage
-            in ``adata.obsm[time_key]`` or ``adata.obs[time_key]``
+            Key for pseudotime values. ``self._adata`` has to contain pseudotime values for every lineage
+            in ``adata.obsm[time_key]`` or ``adata.obs[time_key]``.
         n_lineages:
-            Number of lineages in
+            Number of lineages.
         n_knots:
-            Number of knots that should be found
+            Number of knots that should be found.
 
         Returns
         -------
-        A np.ndarray of length ``n_knots`` with the found knot locations
+        A np.ndarray of length ``n_knots`` with the found knot locations.
         """
         pseudotimes = self._get_pseudotime(time_key, n_lineages)
         quantiles = np.linspace(0.0, 1, n_knots)
@@ -174,9 +178,8 @@ class GAM:
         Parameters
         ----------
         weights_key
-            Key for cell to lineage weights,
-            ``self._adata`` has to contain a weights object of shape (``self._adata.n_obs``, n_lineages)
-            in ``adata.obsm[weights_key]``
+            Key for cell to lineage weights, ``self._adata`` has to contain a weights object of
+            shape (``self._adata.n_obs``, n_lineages) in ``adata.obsm[weights_key]``.
 
         Returns
         -------
@@ -233,6 +236,7 @@ class GAM:
         # TODO(michalk): warn of too many genes
         return (counts.A if issparse(counts) else counts), genes
 
+    # TODO: add details to docstring
     def fit(
         self,
         layer_key: str,
@@ -249,16 +253,14 @@ class GAM:
 
         The GAMs all share the same knot locations for the spline functions. For every lineage and gene an own spline
         function is fitted. The cells are assigned to lineages randomly according to the given cell weights.
-        TODO: add details to docstring
 
         Parameters
         ----------
         layer_key
             Key for the layer from which to retrieve the counts in ``self._adata`` If None, ``self._adata.X`` is used.
         weights_key
-            Key for cell to lineage weights,
-            ``self._adata`` has to contain a weights object of shape (``self._adata.n_obs``, n_lineages)
-            in ``adata.obsm[weights_key]``.
+            Key for cell to lineage weights. ``self._adata`` has to contain a weights object of
+            shape (``self._adata.n_obs``, n_lineages) in ``adata.obsm[weights_key]``.
         time_key
             Key for pseudotime values,
             ``self._adata`` has to contain pseudotime values for every lineage
@@ -293,7 +295,7 @@ class GAM:
         counts, gene_names = self._get_counts(layer_key, use_raw)
         gams = []
         for gene_count in counts.T:
-            gams.append(backend.fit_gam(y=gene_count))
+            gams.append(backend.fit(y=gene_count))
         self._model = gams
 
 
