@@ -3,10 +3,11 @@ import warnings
 
 from anndata import AnnData
 from scipy.sparse import issparse
-import _backend
 
 import numpy as np
 import pandas as pd
+
+from tradeseq.gam import _backend
 
 
 class GAM:
@@ -50,7 +51,7 @@ class GAM:
         """
         if time_key in self._adata.obs.columns:
             pseudotime = self._adata.obs[time_key].values
-        elif time_key in self._adata.obsm.keys:
+        elif time_key in self._adata.obsm.keys():
             pseudotime = np.array(self._adata.obsm[time_key])
         else:
             raise KeyError(
@@ -106,7 +107,7 @@ class GAM:
             names = [str(c) for c in data.names]
         else:
             weights = np.asarray(data)
-            names = np.array([str(i) for i in range(data.shape[1])])
+            names = [str(i) for i in range(data.shape[1])]
 
         if weights.ndim != 2 or weights.shape[0] != self._adata.n_obs:
             raise (
