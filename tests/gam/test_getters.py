@@ -6,7 +6,7 @@ import pytest
 
 import numpy as np
 
-from tradeseq.gam.fitGAM import GAM
+from tradeseq.gam.GAM import GAM
 
 
 def adata_random(n_cells=100, n_genes=2000, n_lineages=2, weights_key="lineages", time_key="pseudotime"):

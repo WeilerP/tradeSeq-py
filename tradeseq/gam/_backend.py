@@ -26,7 +26,7 @@ class GAM:
         raise NotImplementedError("GAM.predict not yet implemented.")
 
 
-class GAM_Fitting:
+class GAMFitting:
     """Backend class used for fitting GAMs in R for multiple genes."""
 
     # TODO: go directly to mgcv.gam by clicking
