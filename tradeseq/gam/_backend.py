@@ -1,11 +1,12 @@
 from typing import List
 
-from rpy2.robjects import numpy2ri, default_converter
+from rpy2.robjects import numpy2ri, pandas2ri, default_converter
 from rpy2.robjects.packages import importr
 from rpy2.robjects.conversion import localconverter
 import rpy2.robjects as ro
 
 import numpy as np
+import pandas as pd
 
 
 class GAM:
@@ -20,16 +21,52 @@ class GAM:
             rpy2 representation of fitted mgcv GAM object.
         """
         self._gam = gam
+        self._stats = importr("stats")
 
-    def predict(self):
-        """TODO."""
-        raise NotImplementedError("GAM.predict not yet implemented.")
+    def predict(self, lineage_assignment, pseudotimes, log_scale):
+        """Predict gene count for new data.
+
+        Parameters
+        ----------
+        lineage_assignment
+            A ``n_predictions`` x ``n_lineage`` np.ndarray where each row contains exactly one 1 (the assigned lineage)
+            and 0 everywhere else. TODO: maybe easier to just have a list with lineage indices for every data point
+        pseudotimes:
+            A ``n_prediction`` x ``n_lineage`` np.ndarray containing the pseudotime values for every lineage.
+            Note that only the pseudotimes of the corresponding lineage are considered.
+            TODO: probably easier to just have list of pseudotime values
+        log_scale:
+            Should predictions be returned in log_scale (this is not log1p-scale!).
+
+        Returns
+        -------
+             A np.ndarray of shape (``n_predictions``,) containing the predicted counts.
+        """
+        n_lineages = lineage_assignment.shape[1]
+        lineage_assignment = pd.DataFrame(
+            data=lineage_assignment, columns=[f"l{lineage_id}" for lineage_id in range(1, n_lineages + 1)]
+        )
+        pseudotimes = pd.DataFrame(
+            data=pseudotimes, columns=[f"t{lineage_id}" for lineage_id in range(1, n_lineages + 1)]
+        )
+
+        parameters = pd.concat([lineage_assignment, pseudotimes], axis=1)
+
+        if log_scale:
+            return_type = "link"
+        else:
+            return_type = "response"
+
+        with localconverter(default_converter + pandas2ri.converter):
+            prediction = self._stats.predict(self._gam, parameters, type=return_type)
+        return prediction
 
 
 class GAMFitting:
     """Backend class used for fitting GAMs in R for multiple genes."""
 
     # TODO: go directly to mgcv.gam by clicking
+    # TODO: seperate R environments ?
 
     def __init__(self, pseudotimes: np.ndarray, w_sample: np.ndarray, knots: np.ndarray, smooth_form: str, family: str):
         """Initialize class and assing pseudotime and cell_weight values to corresponding variales in R.
