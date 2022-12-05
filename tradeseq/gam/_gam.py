@@ -285,7 +285,7 @@ class GAM:
         backend = _backend.GAM_Fitting(pseudotimes, w_sample, knots, smooth_form, family)
 
         use_raw = False
-        counts, gene_names = self._get_counts(layer_key, use_raw)
+        counts, _ = self._get_counts(layer_key, use_raw)
         gams = []
         for gene_count in counts.T:
             gams.append(backend.fit(y=gene_count))
