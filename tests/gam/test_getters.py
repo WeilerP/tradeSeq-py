@@ -9,6 +9,8 @@ import numpy as np
 from tradeseq.gam._gam import GAM
 
 
+# TODO: Refactor to custom strategy similar to
+# https://github.com/theislab/scvelo/blob/ce52f5846e6e8f5953ebd1e02ff675ef9bdc5dd3/tests/core/test_base.py#L18
 def adata_random(n_cells=100, n_genes=2000, n_lineages=2, weights_key="lineages", time_key="pseudotime"):
     counts = csr_matrix(np.random.poisson(1, size=(n_cells, n_genes)), dtype=np.float32)
     adata = AnnData(counts)
