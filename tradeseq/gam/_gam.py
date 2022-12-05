@@ -455,18 +455,15 @@ def _check_cell_weights(cell_weights: np.ndarray) -> bool:
 def _calculate_offset(counts: np.ndarray) -> np.ndarray:
     """Calculate library size normalization offsets.
 
-    To calculate the offset values TMM normalizeation is used.
+    To calculate the offset values TMM normalization is used.
 
     Parameters
     ----------
-    counts: A ``n_cell`` x ``n_lineage`` np.ndarry containing gene counts for every cell
+    counts: A ``n_cell`` x ``n_lineage`` np.ndarray containing gene counts for every cell
 
     Returns
     -------
     A np.ndarray of shape (``n_cell``,) containing an offset for each cell
-
-    :param counts:
-    :return:
     """
     norm_factors = tmm_norm_factors(counts)
     library_size = counts.sum(axis=1) * norm_factors
