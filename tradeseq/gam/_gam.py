@@ -160,10 +160,10 @@ class GAM:
         # try to add end points of all lineages to knots
         end_points = pseudotimes.max(axis=0)
 
-        def find_closest(end_point):
+        def get_closest_knot(end_point):
             return np.argmin(np.abs(knots - end_point))
 
-        replace_ids = np.array([find_closest(end_point) for end_point in end_points])
+        replace_ids = np.array([get_closest_knot(end_point) for end_point in end_points])
         if np.unique(replace_ids).size < np.unique(end_points).size:
             warnings.warn(
                 "Impossible to place a knot at all endpoints. Increase the number of knots to avoid this issue.",
