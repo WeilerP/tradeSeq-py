@@ -1,6 +1,7 @@
 from typing import List, Tuple, Union, Optional
 import warnings
 
+from conorm import tmm_norm_factors
 from anndata import AnnData
 from scipy.sparse import issparse
 
@@ -33,6 +34,7 @@ class GAM:
         self._lineage_names: Optional[List[str]] = None
         self._knots: Optional[np.ndarray] = None
         self._lineage_assignment: Optional[np.ndarray] = None
+        self._offset: Optional[np.ndarray] = None
         # TODO: Not sure if the following attributes are needed
         self._time_key: Optional[str] = None
         self._weights_key: Optional[str] = None
@@ -291,7 +293,8 @@ class GAM:
         self._knots = knots
         return knots
 
-    def _assign_cells_to_lineages(self, weights_key: str) -> Tuple[np.ndarray, List[str]]:
+    # TODO: Compare runtime with jit
+    def _assign_cells_to_lineages(self, weights_key: str) -> Tuple[np.ndarray, list]:
         """Assign every cell randomly to one lineage with probabilities based on the supplied lineage weights.
 
         Parameters
@@ -314,7 +317,7 @@ class GAM:
         def sample_lineage(cell_weights_row):
             return np.random.multinomial(1, cell_weights_row / np.sum(cell_weights_row))
 
-        return np.apply_along_axis(sample_lineage, 1, cell_weights), lineage_names  # TODO: compare with jit
+        return np.apply_along_axis(sample_lineage, 1, cell_weights), lineage_names
 
     def _get_counts(
         self,
@@ -356,14 +359,23 @@ class GAM:
         # TODO(michalk): warn of too many genes
         return (counts.A if issparse(counts) else counts), genes
 
+    def _get_offset(self, offset_key):
+        if offset_key in self._adata.obs.columns:
+            offset = self._adata.obs[offset_key].values
+        else:
+            raise KeyError(
+                f"Invalid key {offset_key} for cell offset." f"The key `{offset_key}` must be present in `adata.obs`."
+            )
+        return offset
+
     # TODO: Parallelize
     # TODO: Add possibility to fit offsets
     def fit(
         self,
         weights_key: str,
         time_key: str,
-        offset_key: str,
         genes,
+        offset_key: Optional[str] = None,
         layer_key: Optional[str] = None,
         n_jobs: Optional[int] = None,
         family: str = "nb",
@@ -383,9 +395,9 @@ class GAM:
             Key for pseudotime values,
             ``self._adata`` has to contain pseudotime values for every lineage
             in ``adata.obsm[time_key]`` or ``adata.obs[time_key]``.
-        offset
-            TODO
         genes
+            TODO
+        offset_key
             TODO
         layer_key
             Key for the layer from which to retrieve the counts in ``self._adata`` If ``None``, ``self._adata.X`` is
@@ -403,15 +415,21 @@ class GAM:
         self._knots = self._get_knots(time_key, n_lineages, n_knots)
         pseudotimes = self._get_pseudotime(time_key, n_lineages)
 
-        right_side = "+".join(
-            [f"s(t{i}, by=l{i}, bs='cr', id=1, k=n_knots)" for i in range(1, n_lineages + 1)]
-        )  # TODO: add offset
-        smooth_form = "y ~ " + right_side
-
-        backend = _backend.GAM_Fitting(pseudotimes, self._lineage_assignment, self._knots, smooth_form, family)
-
         use_raw = False
         counts, _ = self._get_counts(layer_key, use_raw)
+
+        if offset_key is None:
+            self._offset = _calculate_offset(counts)
+        else:
+            self._offset = self._get_offset(offset_key)
+
+        right_side = "+".join([f"s(t{i}, by=l{i}, bs='cr', id=1, k=n_knots)" for i in range(1, n_lineages + 1)])
+        right_side += "offset(offset)"
+        smooth_form = "y ~ " + right_side
+
+        backend = _backend.GAMFitting(
+            pseudotimes, self._lineage_assignment, self._offset, self._knots, smooth_form, family
+        )
         gams = []
         for gene_count in counts.T:
             gams.append(backend.fit(y=gene_count))
@@ -432,3 +450,32 @@ def _check_cell_weights(cell_weights: np.ndarray) -> bool:
         cell weight.
     """
     return (cell_weights >= 0).all() and (np.sum(cell_weights, axis=1) > 0).all()
+
+
+def _calculate_offset(counts: np.ndarray) -> np.ndarray:
+    """Calculate library size normalization offsets.
+
+    To calculate the offset values TMM normalizeation is used.
+
+    Parameters
+    ----------
+    counts: A ``n_cell`` x ``n_lineage`` np.ndarry containing gene counts for every cell
+
+    Returns
+    -------
+    A np.ndarray of shape (``n_cell``,) containing an offset for each cell
+
+    :param counts:
+    :return:
+    """
+    norm_factors = tmm_norm_factors(counts)
+    library_size = counts.sum(axis=1) * norm_factors
+    offset = np.log(library_size)
+    if (offset == 0).any():
+        # TODO: I do not really understand why this is done
+        warnings.warn(
+            "Some calculated offsets are 0, offsetting these to 1.",
+            RuntimeWarning,
+        )
+        offset[offset == 0] = 0  # TODO: this seems like a obvious typo in tradeSeq
+    return offset

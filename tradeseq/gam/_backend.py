@@ -66,10 +66,18 @@ class GAMFitting:
     """Backend class used for fitting GAMs in R for multiple genes."""
 
     # TODO: go directly to mgcv.gam by clicking
-    # TODO: seperate R environments ?
+    # TODO: separate R environments ?
 
-    def __init__(self, pseudotimes: np.ndarray, w_sample: np.ndarray, knots: np.ndarray, smooth_form: str, family: str):
-        """Initialize class and assing pseudotime and cell_weight values to corresponding variales in R.
+    def __init__(
+        self,
+        pseudotimes: np.ndarray,
+        w_sample: np.ndarray,
+        offset: np.ndarray,
+        knots: np.ndarray,
+        smooth_form: str,
+        family: str,
+    ):
+        """Initialize class and assign pseudotime and cell_weight values to corresponding variables in R.
 
         Parameters
         ----------
@@ -78,6 +86,8 @@ class GAMFitting:
         w_sample
             A ``n_cells`` x ``n_lineage`` np.ndarray where each row contains exactly one `1` (the assigned lineage).
             and `0` everywhere else.
+        offset
+            A np.ndarray of shape (``n_cells``,) containing cell specific offsets accounting for different library sizes.
         knots
             Location of knots used for fitting the splines in the GAM.
         smooth_form
@@ -91,6 +101,7 @@ class GAMFitting:
         """
         _assign_pseudotimes(pseudotimes)
         _assign_lineages(w_sample)
+        _assign_offset(offset)
         self._knots: List[float] = knots.astype(float).tolist()  # Convert to list to make conversion to R easier
         self._smooth_form = smooth_form
         self._family = family
@@ -157,3 +168,16 @@ def _assign_lineages(w_sample: np.ndarray):
         }
         """
     )
+
+
+def _assign_offset(offset: np.ndarray):
+    """Assign offset to variable offset in R
+
+    Parameters
+    ----------
+    offset
+        A np.ndarray of shape (``n_cells``,) containing cell specific offsets accounting for different library sizes.
+    """
+    np_cv_rules = default_converter + numpy2ri.converter
+    with localconverter(np_cv_rules):
+        ro.globalenv["offset"] = offset

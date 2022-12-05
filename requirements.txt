@@ -5,3 +5,4 @@ pandas
 anndata
 rpy2
 scipy
+conorm
