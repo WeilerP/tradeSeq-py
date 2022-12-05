@@ -173,6 +173,7 @@ class GAM:
         self._knots = knots
         return knots
 
+    # TODO: Compare runtime with jit
     def _assign_cells_to_lineages(self, weights_key: str) -> np.ndarray:
         """Assign every cell randomly to one lineage with probabilities based on the supplied lineage weights.
 
@@ -196,7 +197,7 @@ class GAM:
         def sample_lineage(cell_weights_row):
             return np.random.multinomial(1, cell_weights_row / np.sum(cell_weights_row))
 
-        return np.apply_along_axis(sample_lineage, 1, cell_weights)  # TODO: compare with jit
+        return np.apply_along_axis(sample_lineage, 1, cell_weights)
 
     def _get_counts(
         self,
