@@ -239,18 +239,15 @@ class GAM:
         # TODO(michalk): warn of too many genes
         return (counts.A if issparse(counts) else counts), genes
 
-    # TODO: add details to docstring
+    # TODO: Parallelize
+    # TODO: Add possibility to fit offsets
     def fit(
         self,
         layer_key: str,
         weights_key: str,
         time_key: str,
-        offset_key: str,
-        genes,
-        n_jobs: Optional[int],
         family: str = "nb",
         n_knots: int = 6,
-        verbose: bool = True,
     ):
         """Fit generalized additive model for every selected gene.
 
@@ -269,19 +266,11 @@ class GAM:
             Key for pseudotime values,
             ``self._adata`` has to contain pseudotime values for every lineage
             in ``adata.obsm[time_key]`` or ``adata.obs[time_key]``.
-        offset
-            TODO
-        genes
-            TODO
-        n_jobs
-            TODO
         family
             Family of probability distributions that is used for fitting the GAM. Defaults to the negative binomial.
             distributions. Can be any family available in mgcv.gam.
         n_knots
             Number of knots that are used for the splines in the GAM.
-        verbose
-            TODO
         """
         w_sample = self._assign_cells_to_lineages(weights_key)
         n_lineages = w_sample.shape[1]
