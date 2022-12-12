@@ -20,7 +20,6 @@ class GAM:
     Then, one can make predictions with and plot the fitted GAMs.
     """
 
-    # TODO: keys as parameters
     def __init__(
         self,
         adata: AnnData,
@@ -171,6 +170,8 @@ class GAM:
         # Plot knot locations
         if knot_locations:
             y_max = max([max([pred.max() for pred in counts_pred]), max([fitted.max() for fitted in counts_fitted])])
+            if log_scale:
+                y_max = np.log1p(y_max)
             plt.vlines(self._knots, 0, y_max, linestyle="dashed", colors="k")
         plt.ylabel(y_label)
         plt.xlabel(x_label)
