@@ -23,7 +23,7 @@ class GAM:
         self._gam = gam
         self._stats = importr("stats")
 
-    def predict(self, lineage_assignment, pseudotimes, log_scale):
+    def predict(self, lineage_assignment, pseudotimes, offsets, log_scale):
         """Predict gene count for new data.
 
         Parameters
@@ -35,6 +35,8 @@ class GAM:
             A ``n_prediction`` x ``n_lineage`` np.ndarray containing the pseudotime values for every lineage.
             Note that only the pseudotimes of the corresponding lineage are considered.
             TODO: probably easier to just have list of pseudotime values
+        offsets:
+            A np.ndarray of shape (``n_prediction``,) containing offsets for each prediciton point
         log_scale:
             Should predictions be returned in log_scale (this is not log1p-scale!).
 
@@ -49,8 +51,9 @@ class GAM:
         pseudotimes = pd.DataFrame(
             data=pseudotimes, columns=[f"t{lineage_id}" for lineage_id in range(1, n_lineages + 1)]
         )
+        offsets = pd.DataFrame(data=offsets, columns=["offset"])
 
-        parameters = pd.concat([lineage_assignment, pseudotimes], axis=1)
+        parameters = pd.concat([lineage_assignment, pseudotimes, offsets], axis=1)
 
         if log_scale:
             return_type = "link"

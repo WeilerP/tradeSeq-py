@@ -20,6 +20,7 @@ class GAM:
     Then, one can make predictions with and plot the fitted GAMs.
     """
 
+    # TODO: keys as parameters
     def __init__(self, adata: AnnData):
         """Initialize GAM class.
 
@@ -65,7 +66,11 @@ class GAM:
         if self._model is None:
             raise RuntimeError("No GAM fitted. The fit method has to be called first.")
 
-        return self._model[gene_id].predict(lineage_assignment, pseudotimes, log_scale)
+        # offsets are just mean offsets of fitted data
+        n_predictions = lineage_assignment.shape[0]
+        offsets = np.repeat(self._offset.mean(), n_predictions)
+
+        return self._model[gene_id].predict(lineage_assignment, pseudotimes, offsets, log_scale)
 
     def plot(
         self,
@@ -369,7 +374,7 @@ class GAM:
         return offset
 
     # TODO: Parallelize
-    # TODO: Add possibility to fit offsets
+    # TODO: Add possibility to add weights
     def fit(
         self,
         weights_key: str,
@@ -424,7 +429,7 @@ class GAM:
             self._offset = self._get_offset(offset_key)
 
         right_side = "+".join([f"s(t{i}, by=l{i}, bs='cr', id=1, k=n_knots)" for i in range(1, n_lineages + 1)])
-        right_side += "offset(offset)"
+        right_side += "+ offset(offset)"
         smooth_form = "y ~ " + right_side
 
         backend = _backend.GAMFitting(
@@ -465,14 +470,11 @@ def _calculate_offset(counts: np.ndarray) -> np.ndarray:
     -------
     A np.ndarray of shape (``n_cell``,) containing an offset for each cell
     """
-    norm_factors = tmm_norm_factors(counts)
-    library_size = counts.sum(axis=1) * norm_factors
+    norm_factors = tmm_norm_factors(counts.T)
+    library_size = counts.sum(axis=1) * norm_factors.flatten()
     offset = np.log(library_size)
     if (offset == 0).any():
         # TODO: I do not really understand why this is done
-        warnings.warn(
-            "Some calculated offsets are 0, offsetting these to 1.",
-            RuntimeWarning,
-        )
+        warnings.warn("Some calculated offsets are 0, offsetting these to 1.", RuntimeWarning)
         offset[offset == 0] = 0  # TODO: this seems like a obvious typo in tradeSeq
     return offset
