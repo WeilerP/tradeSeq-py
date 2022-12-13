@@ -160,7 +160,7 @@ class GAM:
         for times, counts in zip(times_fitted, counts_fitted):
             if log_scale:
                 counts = np.log1p(counts)
-            plt.scatter(times, counts)
+            plt.scatter(times, counts, s=5)
 
         for times, counts, id in zip(times_pred, counts_pred, lineage_id):
             if log_scale:
@@ -172,7 +172,7 @@ class GAM:
             y_max = max([max([pred.max() for pred in counts_pred]), max([fitted.max() for fitted in counts_fitted])])
             if log_scale:
                 y_max = np.log1p(y_max)
-            plt.vlines(self._knots, 0, y_max, linestyle="dashed", colors="k")
+            plt.vlines(self._knots, 0, y_max, linestyle="dashed", colors="k", linewidth=0.5)
         plt.ylabel(y_label)
         plt.xlabel(x_label)
 
