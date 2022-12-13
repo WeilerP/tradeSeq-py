@@ -268,12 +268,17 @@ class GAM:
         A np.ndarray of length ``n_knots`` with the found knot locations.
         """
         pseudotimes = self._get_pseudotime()
+        # only consider pseudotimes of the lineage the cell is assigned to
+        lineage_pseudotimes = [
+            pseudotimes[:, i][np.where(self._lineage_assignment[:, i] == 1, True, False)]
+            for i in range(self._n_lineages)
+        ]
         quantiles = np.linspace(0.0, 1, n_knots)
-        knots = np.quantile(pseudotimes, quantiles)
+        knots = np.quantile(np.concatenate(lineage_pseudotimes), quantiles)
         if np.unique(knots).size != n_knots:
             # duplicates in quantiles
             # try to fix it by considering only the first (and longest) lineage
-            knots = np.quantile(pseudotimes[:, 0], quantiles)
+            knots = np.quantile(lineage_pseudotimes[0], quantiles)
             if np.unique(knots).size != n_knots:
                 # there are still duplicates
                 # try to fix it by replacing duplicate knots with mean of previous and next knot
@@ -287,7 +292,7 @@ class GAM:
                 knots = np.linspace(0.0, pseudotimes.max(), n_knots)
 
         # try to add end points of all lineages to knots
-        end_points = pseudotimes.max(axis=0)
+        end_points = [times.max() for times in lineage_pseudotimes]
 
         def get_closest_knot(end_point):
             return np.argmin(np.abs(knots - end_point))
