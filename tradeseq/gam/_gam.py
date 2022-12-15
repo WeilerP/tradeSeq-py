@@ -314,7 +314,7 @@ class GAM:
         Returns
         -------
             A ``n_cells`` x ``n_lineage`` np.ndarray where each row contains exactly one 1 (the assigned lineage)
-            and 0 everywhere else
+            and 0 everywhere else and a list of lineage names.
         """
         cell_weights, lineage_names = self._get_lineage()
         if not _check_cell_weights(cell_weights):
