@@ -294,7 +294,7 @@ class GAM:
                 knots = np.linspace(0.0, pseudotimes.max(), n_knots)
 
         # try to add end points of all lineages to knots
-        end_points = [times.max() for times in lineage_pseudotimes]
+        end_points = [times.max(initial=0) for times in lineage_pseudotimes]
 
         def get_closest_knot(end_point):
             return np.argmin(np.abs(knots - end_point))
