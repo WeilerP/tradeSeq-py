@@ -89,7 +89,7 @@ class GAM:
 
         Returns
         -------
-             A np.ndarray of shape (``n_predictions``,) containing the predicted counts.
+        An np.ndarray of shape (``n_predictions``,) containing the predicted counts.
         """
         if self._model is None:
             raise RuntimeError("No GAM fitted. The fit method has to be called first.")
@@ -106,7 +106,7 @@ class GAM:
         lineage_id: Optional[Union[List[int], int]] = None,
         resolution: int = 200,
         knot_locations: bool = True,
-        log_scale=False,
+        log_scale: bool = False,
         x_label: str = "pseudotime",
         y_label: str = "gene expression",
     ):
@@ -128,7 +128,7 @@ class GAM:
         x_label
             Label for x-axis.
         y_label
-            label for y-axis
+            Label for y-axis.
         """
         n_lineages = self._n_lineages
         if lineage_id is None:
@@ -369,7 +369,7 @@ class GAM:
 
         Returns
         -------
-            A np.ndarray of shape (``adata.n_obs``,) containing the cell-specific offsets.
+        An np.ndarray of shape (``adata.n_obs``,) containing the cell-specific offsets.
         """
         if self._offset_key in self._adata.obs.columns:
             offset = self._adata.obs[self._offset_key].values
@@ -455,11 +455,12 @@ def _calculate_offset(counts: np.ndarray) -> np.ndarray:
 
     Parameters
     ----------
-    counts: A ``n_cell`` x ``n_lineage`` np.ndarray containing gene counts for every cell
+    counts
+        A ``n_cell`` x ``n_lineage`` np.ndarray containing gene counts for every cell
 
     Returns
     -------
-    A np.ndarray of shape (``n_cell``,) containing an offset for each cell
+    An np.ndarray of shape (``n_cell``,) containing an offset for each cell.
     """
     norm_factors = tmm_norm_factors(counts.T)
     library_size = counts.sum(axis=1) * norm_factors.flatten()
