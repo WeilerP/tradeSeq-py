@@ -46,7 +46,7 @@ class TestGetPseudotime:
     @settings(max_examples=50, deadline=1000)
     def test_shape(self, time_key: str, n_lineages: int, n_cells: int):
         adata = adata_random(n_cells=n_cells, n_lineages=n_lineages, time_key=time_key)
-        gam = gam = GAM(adata, n_lineages, time_key, "lineages")
+        gam = GAM(adata, n_lineages, time_key, "lineages")
         pseudotime = gam._get_pseudotime()
         assert isinstance(pseudotime, np.ndarray)
         assert pseudotime.shape == (n_cells, n_lineages)
