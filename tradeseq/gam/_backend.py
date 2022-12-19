@@ -36,13 +36,13 @@ class GAM:
             Note that only the pseudotimes of the corresponding lineage are considered.
             TODO: probably easier to just have list of pseudotime values
         offsets:
-            A np.ndarray of shape (``n_prediction``,) containing offsets for each prediciton point
+            An np.ndarray of shape (``n_prediction``,) containing offsets for each prediciton point.
         log_scale:
             Should predictions be returned in log_scale (this is not log1p-scale!).
 
         Returns
         -------
-             A np.ndarray of shape (``n_predictions``,) containing the predicted counts.
+        An np.ndarray of shape (``n_predictions``,) containing the predicted counts.
         """
         n_lineages = lineage_assignment.shape[1]
         lineage_assignment = pd.DataFrame(
@@ -90,7 +90,8 @@ class GAMFitting:
             A ``n_cells`` x ``n_lineage`` np.ndarray where each row contains exactly one `1` (the assigned lineage).
             and `0` everywhere else.
         offset
-            A np.ndarray of shape (``n_cells``,) containing cell specific offsets accounting for different library sizes.
+            An np.ndarray of shape (``n_cells``,) containing cell specific offsets accounting for different library
+            sizes.
         knots
             Location of knots used for fitting the splines in the GAM.
         smooth_form
@@ -174,12 +175,12 @@ def _assign_lineages(w_sample: np.ndarray):
 
 
 def _assign_offset(offset: np.ndarray):
-    """Assign offset to variable offset in R
+    """Assign offset to variable offset in R.
 
     Parameters
     ----------
     offset
-        A np.ndarray of shape (``n_cells``,) containing cell specific offsets accounting for different library sizes.
+        An np.ndarray of shape (``n_cells``,) containing cell specific offsets accounting for different library sizes.
     """
     np_cv_rules = default_converter + numpy2ri.converter
     with localconverter(np_cv_rules):
