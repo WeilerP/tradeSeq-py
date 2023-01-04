@@ -386,8 +386,6 @@ class GAM:
     # TODO: Add possibility to add weights
     def fit(
         self,
-        genes=None,
-        n_jobs: Optional[int] = None,
         family: str = "nb",
         n_knots: int = 6,
     ):
@@ -398,10 +396,6 @@ class GAM:
 
         Parameters
         ----------
-        genes
-            TODO
-        n_jobs
-            TODO
         family
             Family of probability distributions that is used for fitting the GAM. Defaults to the negative binomial.
             distributions. Can be any family available in mgcv.gam.
