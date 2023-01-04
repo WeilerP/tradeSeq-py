@@ -95,6 +95,8 @@ class GAM:
         """
         if self._model is None:
             raise RuntimeError("No GAM fitted. The fit method has to be called first.")
+        if lineage_assignment.shape != pseudotimes.shape:
+            raise RuntimeError("Lineage Assignment and Pseudotime have to have the same shape.")
 
         # offsets are just mean offsets of fitted data
         n_predictions = lineage_assignment.shape[0]
@@ -245,10 +247,10 @@ class GAM:
             weights = np.asarray(data)
             names = [str(i) for i in range(data.shape[1])]
 
-        if weights.ndim != 2 or weights.shape[0] != self._adata.n_obs:
+        if weights.ndim != 2 or weights.shape != (self._adata.n_obs, self._n_lineages):
             raise (
                 f"Invalid cell weight shape.\n"
-                f"Expected shape: ({self._adata.n_obs}, n_lineages).\n"
+                f"Expected shape: ({self._adata.n_obs}, {self._n_lineages}).\n"
                 f"Actual shape: {data.shape}."
             )
 
@@ -451,8 +453,13 @@ def _calculate_offset(counts: np.ndarray) -> np.ndarray:
     An np.ndarray of shape (``n_cell``,) containing an offset for each cell.
     """
     norm_factors = tmm_norm_factors(counts.T)
+    if np.isnan(norm_factors).any():
+        norm_factors = np.ones(counts.shape[0])
+        warnings.warn(
+            "TMM normalization failed for some cells. Will use unnormalized library sizes as offset", RuntimeWarning
+        )
     library_size = counts.sum(axis=1) * norm_factors.flatten()
-    offset = np.log(library_size)
+    offset = np.log1p(library_size)  # TODO: changed from log to log1p
     if (offset == 0).any():
         # TODO: I do not really understand why this is done
         warnings.warn("Some calculated offsets are 0, offsetting these to 1.", RuntimeWarning)
