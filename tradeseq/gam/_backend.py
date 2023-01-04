@@ -23,7 +23,7 @@ class GAM:
         self._gam = gam
         self._stats = importr("stats")
 
-    def predict(self, lineage_assignment, pseudotimes, offsets, log_scale):
+    def predict(self, lineage_assignment: np.ndarray, pseudotimes: np.ndarray, offsets: np.ndarray, log_scale: bool):
         """Predict gene count for new data.
 
         Parameters

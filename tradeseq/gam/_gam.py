@@ -70,7 +70,9 @@ class GAM:
         self._layer_key = layer_key
 
     # TODO: change so that list of gene_ids or gene_names are accepted
-    def predict(self, gene_id: int, lineage_assignment: np.ndarray, pseudotimes, log_scale: bool = False) -> np.ndarray:
+    def predict(
+        self, gene_id: int, lineage_assignment: np.ndarray, pseudotimes: np.ndarray, log_scale: bool = False
+    ) -> np.ndarray:
         """Predict gene count for new data according to fitted GAM.
 
         Parameters
