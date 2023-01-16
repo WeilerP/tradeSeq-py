@@ -64,7 +64,7 @@ def get_adata(
     if use_offset and offset_key is None:
         offset_key = draw(st.text())
 
-    counts = draw(arrays(dtype=int, elements=st.integers(min_value=0, max_value=MAX_INT_VALUE), shape=(n_obs, n_vars)))
+    counts = np.random.poisson(1, size=(n_obs, n_vars))
 
     if deterministic_weights:
         # every cell is assigned to exactly one lineage
@@ -80,13 +80,7 @@ def get_adata(
             )
         )
 
-    pseudotimes = draw(
-        arrays(
-            dtype=float,
-            elements=st.floats(min_value=0, max_value=MAX_INT_VALUE, exclude_min=True),
-            shape=(n_obs, n_lineages),
-        )
-    )
+    pseudotimes = np.random.uniform(0, MAX_INT_VALUE - 1, size=(n_obs, n_lineages))
 
     if sparse_matrix:
         counts = csr_matrix(counts)
