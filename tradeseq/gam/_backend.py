@@ -31,13 +31,13 @@ class GAM:
         lineage_assignment
             A ``n_predictions`` x ``n_lineage`` np.ndarray where each row contains exactly one 1 (the assigned lineage)
             and 0 everywhere else. TODO: maybe easier to just have a list with lineage indices for every data point
-        pseudotimes:
+        pseudotimes
             A ``n_prediction`` x ``n_lineage`` np.ndarray containing the pseudotime values for every lineage.
             Note that only the pseudotimes of the corresponding lineage are considered.
             TODO: probably easier to just have list of pseudotime values
-        offsets:
+        offsets
             An np.ndarray of shape (``n_prediction``,) containing offsets for each prediciton point.
-        log_scale:
+        log_scale
             Should predictions be returned in log_scale (this is not log1p-scale!).
 
         Returns
