@@ -1,11 +1,14 @@
-from typing import Tuple, Optional
+from typing import List, Tuple, Union, Optional
 import warnings
 
+from conorm import tmm_norm_factors
 from anndata import AnnData
 from scipy.sparse import issparse
 
 import numpy as np
 import pandas as pd
+
+import matplotlib.pyplot as plt
 
 from tradeseq.gam import _backend
 
@@ -17,38 +20,176 @@ class GAM:
     Then, one can make predictions with and plot the fitted GAMs.
     """
 
-    def __init__(self, adata: AnnData):
+    def __init__(
+        self,
+        adata: AnnData,
+        n_lineages: int,
+        time_key: str,
+        weights_key: str,
+        offset_key: Optional[str] = None,
+        layer_key: Optional[str] = None,
+    ):
         """Initialize GAM class.
 
         Parameters
         ----------
         adata
             AnnData object containing the gene counts, the cell to lineage weights, and the pseudotimes.
+        n_lineages
+            Number of lineages.
+        time_key
+            Key for pseudotime values,
+            ``adata`` has to contain pseudotime values for every lineage
+            in ``adata.obsm[time_key]`` or ``adata.obs[time_key]``.
+        weights_key
+            Key for cell to lineage weights. ``adata`` has to contain a weights object of
+            shape (``adata.n_obs``, n_lineages) in ``adata.obsm[weights_key]``.
+        offset_key
+            Key for a cell specific offset that accounts for differences in sequencing depth. ``adata`` has to contain
+            an offset object of shape (``adata.n_obs``,) in the column `òffset_key`` in ``adata.obs``.
+        layer_key
+            Key for the layer from which to retrieve the counts in ``adata`` If ``None``, ``adata.X`` is
+            used.
         """
         self._adata: AnnData = adata
-        self._model: Optional[list[_backend.GAM]] = None
+        self._n_lineages = n_lineages
+
+        self._model: Optional[List[_backend.GAM]] = None
         self._genes = None
+
+        self._lineage_names: Optional[List[str]] = None
+
         self._knots: Optional[np.ndarray] = None
 
-    def predict(self):
-        """TODO."""
-        raise NotImplementedError("GAM.predict not yet implemented.")
+        self._lineage_assignment: Optional[np.ndarray] = None
+        self._offset: Optional[np.ndarray] = None  # TODO: Not sure if necessary or sufficient to just save average
 
-    def _get_pseudotime(self, time_key: str, n_lineages: int) -> np.ndarray:
-        """Retrieve pseudotime from ``self._adata``.
+        self._time_key = time_key
+        self._weights_key = weights_key
+        self._offset_key = offset_key
+        self._layer_key = layer_key
+
+    # TODO: change so that list of gene_ids or gene_names are accepted
+    def predict(
+        self, gene_id: int, lineage_assignment: np.ndarray, pseudotimes: np.ndarray, log_scale: bool = False
+    ) -> np.ndarray:
+        """Predict gene count for new data according to fitted GAM.
 
         Parameters
         ----------
-        time_key
-            Key for pseudotime values. ``self._adata`` has to contain pseudotime values for every lineage
-            in ``adata.obsm[time_key]`` or ``adata.obs[time_key]``.
-        n_lineages
-            Number of lineages.
+        gene_id
+            Index of the gene for which prediction is made.
+        lineage_assignment
+            A ``n_predictions`` x ``n_lineage`` np.ndarray where each row contains exactly one 1 (the assigned lineage)
+            and 0 everywhere else. TODO: maybe easier to just have a list with lineage indices for every data point
+        pseudotimes
+            A ``n_prediction`` x ``n_lineage`` np.ndarray containing the pseudotime values for every lineage.
+            Note that only the pseudotimes of the corresponding lineage are considered.
+            TODO: probably easier to just have list of pseudotime values
+        log_scale
+            Should predictions be returned in log_scale (this is not log1p-scale!).
+
+        Returns
+        -------
+        An np.ndarray of shape (``n_predictions``,) containing the predicted counts.
+        """
+        if self._model is None:
+            raise RuntimeError("No GAM fitted. The fit method has to be called first.")
+
+        # offsets are just mean offsets of fitted data
+        n_predictions = lineage_assignment.shape[0]
+        offsets = np.repeat(self._offset.mean(), n_predictions)
+
+        return self._model[gene_id].predict(lineage_assignment, pseudotimes, offsets, log_scale)
+
+    def plot(
+        self,
+        gene_id: int,
+        lineage_id: Optional[Union[List[int], int]] = None,
+        resolution: int = 200,
+        knot_locations: bool = True,
+        log_scale: bool = False,
+        x_label: str = "pseudotime",
+        y_label: str = "gene expression",
+    ):
+        """Plot gene counts and fitted smoothers.
+
+        Parameters
+        ----------
+        gene_id
+            Index of the gene that should be plotted.
+        lineage_id
+            Indices of plotted lineages. Can be a list or an int if only a single lineage should be plotted.
+            If None, all lineages are plotted.
+        resolution
+            Number of points that are used to plot the smoother.
+        knot_locations
+            Boolean indicating whether knot locations should be plotted as dashed vertical lines.
+        log_scale
+            Boolean indicating whether counts and smoothers should be plotted in log1p scale.
+        x_label
+            Label for x-axis.
+        y_label
+            Label for y-axis.
+        """
+        n_lineages = self._n_lineages
+        if lineage_id is None:
+            lineage_id = list(range(n_lineages))
+        if isinstance(lineage_id, int):
+            lineage_id = [lineage_id]
+
+        times_fitted = []
+        counts_fitted = []
+        for id in lineage_id:
+            cell_mask = self._lineage_assignment[:, id] == 1
+            times_fitted.append(self._get_pseudotime()[cell_mask, id])
+            counts_fitted.append(self._get_counts()[0][cell_mask, gene_id])
+
+        times_pred = []
+        counts_pred = []
+        for id in lineage_id:
+            equally_spaced = np.linspace(times_fitted[id].min(), times_fitted[id].max(), resolution)
+            times_pred.append(equally_spaced)
+            # create matrix with pseudotimes for every lineage (needed for prediction)
+            times = np.zeros((resolution, n_lineages))
+            times[:, id] = times_pred[-1]
+
+            lineage_pred = np.zeros((resolution, n_lineages))
+            lineage_pred[:, id] = 1
+
+            counts_pred.append(self.predict(gene_id, lineage_pred, times, log_scale=False))
+
+        for times, counts in zip(times_fitted, counts_fitted):
+            if log_scale:
+                counts = np.log1p(counts)
+            plt.scatter(times, counts, s=5)
+
+        for times, counts, id in zip(times_pred, counts_pred, lineage_id):
+            if log_scale:
+                counts = np.log1p(counts)
+            plt.plot(times, counts, label=f"lineage {self._lineage_names[id]}")
+
+        # Plot knot locations
+        if knot_locations:
+            y_max = max([max([pred.max() for pred in counts_pred]), max([fitted.max() for fitted in counts_fitted])])
+            if log_scale:
+                y_max = np.log1p(y_max)
+            plt.vlines(self._knots, 0, y_max, linestyle="dashed", colors="k", linewidth=0.5)
+        plt.ylabel(y_label)
+        plt.xlabel(x_label)
+
+        plt.legend()
+        plt.show()
+
+    def _get_pseudotime(self) -> np.ndarray:
+        """Retrieve pseudotime from ``self._adata``.
 
         Returns
         --------
         Array of shape (``self._adata.n_obs``, ``n_lineages``) containing pseudotime values for all lineages.
         """
+        time_key = self._time_key
+        n_lineages = self._n_lineages
         if time_key in self._adata.obs.columns:
             pseudotime = self._adata.obs[time_key].values
         elif time_key in self._adata.obsm.keys():
@@ -77,19 +218,14 @@ class GAM:
 
         return pseudotime
 
-    def _get_lineage(self, weights_key: str) -> Tuple[np.ndarray, list]:
+    def _get_lineage(self) -> Tuple[np.ndarray, list]:
         """Retrieve cell to lineage weights from ``self._adata``.
-
-        Parameters
-        ----------
-        weights_key
-            Key for cell to lineage weights. ``self._adata`` has to contain a weights object of
-            shape (``self._adata.n_obs``, n_lineages) in ``adata.obsm[weights_key]``.
 
         Returns
         -------
             Tuple of cell to lineage weights as a (``self._adata.n_obs``, ``n_lineages``) array and lineage names.
         """
+        weights_key = self._weights_key
         try:
             data = self._adata.obsm[weights_key]
         except KeyError:
@@ -118,7 +254,7 @@ class GAM:
 
         return weights, names
 
-    def _get_knots(self, time_key: str, n_lineages: int, n_knots: int) -> np.ndarray:
+    def _get_knots(self, n_knots: int) -> np.ndarray:
         """Calculate knot locations at quantiles of pseudotime values (of all lineages).
 
         If possible, end points of lineages are used as knots.
@@ -126,11 +262,6 @@ class GAM:
 
         Parameters
         ----------
-        time_key:
-            Key for pseudotime values. ``self._adata`` has to contain pseudotime values for every lineage
-            in ``adata.obsm[time_key]`` or ``adata.obs[time_key]``.
-        n_lineages:
-            Number of lineages.
         n_knots:
             Number of knots that should be found.
 
@@ -138,13 +269,18 @@ class GAM:
         -------
         A np.ndarray of length ``n_knots`` with the found knot locations.
         """
-        pseudotimes = self._get_pseudotime(time_key, n_lineages)
+        pseudotimes = self._get_pseudotime()
+        # only consider pseudotimes of the lineage the cell is assigned to
+        lineage_pseudotimes = [
+            pseudotimes[:, i][np.where(self._lineage_assignment[:, i] == 1, True, False)]
+            for i in range(self._n_lineages)
+        ]
         quantiles = np.linspace(0.0, 1, n_knots)
-        knots = np.quantile(pseudotimes, quantiles)
+        knots = np.quantile(np.concatenate(lineage_pseudotimes), quantiles)
         if np.unique(knots).size != n_knots:
             # duplicates in quantiles
             # try to fix it by considering only the first (and longest) lineage
-            knots = np.quantile(pseudotimes[:, 0], quantiles)
+            knots = np.quantile(lineage_pseudotimes[0], quantiles)
             if np.unique(knots).size != n_knots:
                 # there are still duplicates
                 # try to fix it by replacing duplicate knots with mean of previous and next knot
@@ -158,7 +294,7 @@ class GAM:
                 knots = np.linspace(0.0, pseudotimes.max(), n_knots)
 
         # try to add end points of all lineages to knots
-        end_points = pseudotimes.max(axis=0)
+        end_points = [times.max() for times in lineage_pseudotimes]
 
         def get_closest_knot(end_point):
             return np.argmin(np.abs(knots - end_point))
@@ -174,21 +310,15 @@ class GAM:
         return knots
 
     # TODO: Compare runtime with jit
-    def _assign_cells_to_lineages(self, weights_key: str) -> np.ndarray:
+    def _assign_cells_to_lineages(self) -> Tuple[np.ndarray, list]:
         """Assign every cell randomly to one lineage with probabilities based on the supplied lineage weights.
-
-        Parameters
-        ----------
-        weights_key
-            Key for cell to lineage weights, ``self._adata`` has to contain a weights object of
-            shape (``self._adata.n_obs``, n_lineages) in ``adata.obsm[weights_key]``.
 
         Returns
         -------
             A ``n_cells`` x ``n_lineage`` np.ndarray where each row contains exactly one 1 (the assigned lineage)
-            and 0 everywhere else
+            and 0 everywhere else and a list of lineage names.
         """
-        cell_weights, _ = self._get_lineage(weights_key)
+        cell_weights, lineage_names = self._get_lineage()
         if not _check_cell_weights(cell_weights):
             raise ValueError(
                 "Cell weights have to be non-negative and cells need to have at least one positive cell weight"
@@ -197,20 +327,16 @@ class GAM:
         def sample_lineage(cell_weights_row):
             return np.random.multinomial(1, cell_weights_row / np.sum(cell_weights_row))
 
-        return np.apply_along_axis(sample_lineage, 1, cell_weights)
+        return np.apply_along_axis(sample_lineage, 1, cell_weights), lineage_names
 
     def _get_counts(
         self,
-        layer_key: Optional[str] = None,
         use_raw: bool = False,
     ) -> Tuple[np.ndarray, list]:
         """Retrieve gene expression counts from ``self._adata``.
 
         Parameters
         ----------
-        layer_key
-            Key for the layer from which to retrieve the counts in ``self._adata`` If ``None``, ``self._adata.X`` is
-            used.
         use_raw
             Boolean indicating whether ``self._adata.raw`` should be used if existing.
 
@@ -220,6 +346,7 @@ class GAM:
             gene names.
         """
         # TODO: maybe add support for gene subsets?
+        layer_key = self._layer_key
         if use_raw and self._adata.raw is None:
             use_raw = False  # TODO(warn)
 
@@ -239,13 +366,26 @@ class GAM:
         # TODO(michalk): warn of too many genes
         return (counts.A if issparse(counts) else counts), genes
 
+    def _get_offset(self):
+        """Get cell-specific offset to account for differences in sequencing depth from ``self._adata``.
+
+        Returns
+        -------
+        An np.ndarray of shape (``adata.n_obs``,) containing the cell-specific offsets.
+        """
+        if self._offset_key in self._adata.obs.columns:
+            offset = self._adata.obs[self._offset_key].values
+        else:
+            raise KeyError(
+                f"Invalid key {self._offset_key} for cell offset."
+                f"The key `{self._offset_key}` must be present in `adata.obs`."
+            )
+        return offset
+
     # TODO: Parallelize
-    # TODO: Add possibility to fit offsets
+    # TODO: Add possibility to add weights
     def fit(
         self,
-        layer_key: str,
-        weights_key: str,
-        time_key: str,
         family: str = "nb",
         n_knots: int = 6,
     ):
@@ -256,36 +396,32 @@ class GAM:
 
         Parameters
         ----------
-        layer_key
-            Key for the layer from which to retrieve the counts in ``self._adata`` If ``None``, ``self._adata.X`` is
-            used.
-        weights_key
-            Key for cell to lineage weights. ``self._adata`` has to contain a weights object of
-            shape (``self._adata.n_obs``, n_lineages) in ``adata.obsm[weights_key]``.
-        time_key
-            Key for pseudotime values,
-            ``self._adata`` has to contain pseudotime values for every lineage
-            in ``adata.obsm[time_key]`` or ``adata.obs[time_key]``.
         family
             Family of probability distributions that is used for fitting the GAM. Defaults to the negative binomial.
             distributions. Can be any family available in mgcv.gam.
         n_knots
             Number of knots that are used for the splines in the GAM.
         """
-        w_sample = self._assign_cells_to_lineages(weights_key)
-        n_lineages = w_sample.shape[1]
-        knots = self._get_knots(time_key, n_lineages, n_knots)
-        pseudotimes = self._get_pseudotime(time_key, n_lineages)
-
-        right_side = "+".join(
-            [f"s(t{i}, by=l{i}, bs='cr', id=1, k=n_knots)" for i in range(1, n_lineages + 1)]
-        )  # TODO: add offset
-        smooth_form = "y ~ " + right_side
-
-        backend = _backend.GAM_Fitting(pseudotimes, w_sample, knots, smooth_form, family)
+        self._lineage_assignment, self._lineage_names = self._assign_cells_to_lineages()
+        n_lineages = self._lineage_assignment.shape[1]
+        self._knots = self._get_knots(n_knots)
+        pseudotimes = self._get_pseudotime()
 
         use_raw = False
-        counts, _ = self._get_counts(layer_key, use_raw)
+        counts, _ = self._get_counts(use_raw)
+
+        if self._offset_key is None:
+            self._offset = _calculate_offset(counts)
+        else:
+            self._offset = self._get_offset()
+
+        right_side = "+".join([f"s(t{i}, by=l{i}, bs='cr', id=1, k=n_knots)" for i in range(1, n_lineages + 1)])
+        right_side += "+ offset(offset)"
+        smooth_form = "y ~ " + right_side
+
+        backend = _backend.GAMFitting(
+            pseudotimes, self._lineage_assignment, self._offset, self._knots, smooth_form, family
+        )
         gams = []
         for gene_count in counts.T:
             gams.append(backend.fit(y=gene_count))
@@ -306,3 +442,27 @@ def _check_cell_weights(cell_weights: np.ndarray) -> bool:
         cell weight.
     """
     return (cell_weights >= 0).all() and (np.sum(cell_weights, axis=1) > 0).all()
+
+
+def _calculate_offset(counts: np.ndarray) -> np.ndarray:
+    """Calculate library size normalization offsets.
+
+    To calculate the offset values TMM normalization is used.
+
+    Parameters
+    ----------
+    counts
+        A ``n_cell`` x ``n_lineage`` np.ndarray containing gene counts for every cell
+
+    Returns
+    -------
+    An np.ndarray of shape (``n_cell``,) containing an offset for each cell.
+    """
+    norm_factors = tmm_norm_factors(counts.T)
+    library_size = counts.sum(axis=1) * norm_factors.flatten()
+    offset = np.log(library_size)
+    if (offset == 0).any():
+        # TODO: I do not really understand why this is done
+        warnings.warn("Some calculated offsets are 0, offsetting these to 1.", RuntimeWarning)
+        offset[offset == 0] = 0  # TODO: this seems like a obvious typo in tradeSeq
+    return offset

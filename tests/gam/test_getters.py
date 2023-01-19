@@ -26,17 +26,17 @@ class TestGetPseudotime:
     @given(time_key=st.text(), n_lineages=st.integers(min_value=1, max_value=20))
     def test_invalid_shape(self, time_key: str, n_lineages: int):
         adata = adata_random(n_lineages=n_lineages + 1, time_key=time_key)
-        gam = GAM(adata)
+        gam = GAM(adata, n_lineages, time_key, "lineages")
         with pytest.raises(ValueError):
-            gam._get_pseudotime(time_key, n_lineages)
+            gam._get_pseudotime()
 
     @given(time_key=st.text(), n_lineages=st.integers(min_value=2, max_value=20))
     def test_first_lineage_longest(self, time_key: str, n_lineages: int):
         adata = adata_random(n_lineages=n_lineages, time_key=time_key)
         adata.obsm[time_key][0, 1] = 2  # make sure that second lineage is longest
-        gam = GAM(adata)
+        gam = GAM(adata, n_lineages, time_key, "lineages")
         with pytest.warns(RuntimeWarning):
-            gam._get_pseudotime(time_key, n_lineages)
+            gam._get_pseudotime()
 
     @given(
         time_key=st.text(),
@@ -46,8 +46,8 @@ class TestGetPseudotime:
     @settings(max_examples=50, deadline=1000)
     def test_shape(self, time_key: str, n_lineages: int, n_cells: int):
         adata = adata_random(n_cells=n_cells, n_lineages=n_lineages, time_key=time_key)
-        gam = GAM(adata)
-        pseudotime = gam._get_pseudotime(time_key, n_lineages)
+        gam = GAM(adata, n_lineages, time_key, "lineages")
+        pseudotime = gam._get_pseudotime()
         assert isinstance(pseudotime, np.ndarray)
         assert pseudotime.shape == (n_cells, n_lineages)
 
@@ -62,8 +62,8 @@ class TestGetPseudotime:
         adata = adata_random(n_cells=n_cells, time_key="pseudotime")
         del adata.obsm["pseudotime"]
         adata.obs[time_key] = data.draw(arrays(np.float64, (n_cells,)))
-        gam = GAM(adata)
-        pseudotime = gam._get_pseudotime(time_key, n_lineages)
+        gam = GAM(adata, n_lineages, time_key, "lineages")
+        pseudotime = gam._get_pseudotime()
         assert isinstance(pseudotime, np.ndarray)
         assert pseudotime.shape == (n_cells, n_lineages)
 
@@ -77,8 +77,8 @@ class TestGetLineage:
     @settings(max_examples=50, deadline=1000)
     def test_shape(self, weights_key: str, n_lineages: int, n_cells: int):
         adata = adata_random(n_cells=n_cells, n_lineages=n_lineages, weights_key=weights_key)
-        gam = GAM(adata)
-        weights, names = gam._get_lineage(weights_key)
+        gam = GAM(adata, n_lineages, "pseudotime", weights_key)
+        weights, names = gam._get_lineage()
 
         assert isinstance(weights, np.ndarray)
         assert isinstance(names, list)
@@ -90,9 +90,9 @@ class TestGetLineage:
     def test_invalid_key(self, weights_key1, weights_key2):
         assume(weights_key1 != weights_key2)
         adata = adata_random(weights_key=weights_key1)
-        gam = GAM(adata)
+        gam = GAM(adata, 2, "pseudotime", weights_key2)
         with pytest.raises(KeyError):
-            gam._get_lineage(weights_key2)
+            gam._get_lineage()
 
 
 class TestGetKnots:
@@ -104,8 +104,9 @@ class TestGetKnots:
     )
     def test_number_of_knots(self, n_knots, n_lineages, time_key):
         adata = adata_random(n_lineages=n_lineages, time_key=time_key)
-        gam = GAM(adata)
-        knots = gam._get_knots(time_key, n_lineages, n_knots)
+        gam = GAM(adata, n_lineages, time_key, "lineages")
+        gam._lineage_assignment, _ = gam._assign_cells_to_lineages()
+        knots = gam._get_knots(n_knots)
 
         assert isinstance(knots, np.ndarray)
         assert knots.shape == (n_knots,)
@@ -117,32 +118,35 @@ class TestCellAssignment:
         weights_key = "weights"
         adata = adata_random(weights_key=weights_key)
         adata.obsm[weights_key][0, :] = 0
-        gam = GAM(adata)
+        gam = GAM(adata, 2, "pseudotime", weights_key)
 
         with pytest.raises(ValueError):
-            gam._assign_cells_to_lineages(weights_key)
+            gam._assign_cells_to_lineages()
 
     def test_negative_weights(self):
         weights_key = "weights"
         adata = adata_random(weights_key=weights_key)
         adata.obsm[weights_key][0, 0] = -1
-        gam = GAM(adata)
+        gam = GAM(adata, 2, "pseudotime", weights_key)
 
         with pytest.raises(ValueError):
-            gam._assign_cells_to_lineages(weights_key)
+            gam._assign_cells_to_lineages()
 
     @given(n_lineages=st.integers(min_value=1, max_value=20), n_cells=st.integers(min_value=1, max_value=2000))
     @settings(max_examples=50, deadline=1000)
     def test_assignment(self, n_lineages, n_cells):
         weights_key = "weights"
         adata = adata_random(weights_key=weights_key, n_lineages=n_lineages, n_cells=n_cells)
-        gam = GAM(adata)
+        gam = GAM(adata, n_lineages, "pseudotime", weights_key)
 
-        assign = gam._assign_cells_to_lineages(weights_key)
+        assign, lineage_names = gam._assign_cells_to_lineages()
 
         assert isinstance(assign, np.ndarray)
         assert assign.shape == (n_cells, n_lineages)
         assert assign.sum() == n_cells
+
+        assert isinstance(lineage_names, list)
+        assert len(lineage_names) == n_lineages
 
 
 class TestGetCounts:
@@ -150,7 +154,7 @@ class TestGetCounts:
     @settings(max_examples=50, deadline=1000)
     def test_without_layer(self, n_cells, n_genes):
         adata = adata_random(n_genes=n_genes, n_cells=n_cells)
-        gam = GAM(adata)
+        gam = GAM(adata, 2, "pseudotime", "lineages")
 
         counts, genes = gam._get_counts()
 
@@ -165,9 +169,9 @@ class TestGetCounts:
         layer_key = "l"
         adata = adata_random(n_genes=n_genes, n_cells=n_cells)
         adata.layers[layer_key] = adata.X
-        gam = GAM(adata)
+        gam = GAM(adata, 2, "pseudotime", "lineages", layer_key=layer_key)
 
-        counts, genes = gam._get_counts(layer_key=layer_key)
+        counts, genes = gam._get_counts()
 
         assert isinstance(counts, np.ndarray)
         assert counts.shape == (n_cells, n_genes)
