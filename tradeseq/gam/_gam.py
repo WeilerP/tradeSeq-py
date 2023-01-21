@@ -384,11 +384,7 @@ class GAM:
 
     # TODO: Parallelize
     # TODO: Add possibility to add weights
-    def fit(
-        self,
-        family: str = "nb",
-        n_knots: int = 6,
-    ):
+    def fit(self, family: str = "nb", n_knots: int = 6, n_jobs: int = 1):
         """Fit generalized additive model for every selected gene.
 
         The GAMs all share the same knot locations for the spline functions. For every lineage and gene a single spline
@@ -419,13 +415,9 @@ class GAM:
         right_side += "+ offset(offset)"
         smooth_form = "y ~ " + right_side
 
-        backend = _backend.GAMFitting(
-            pseudotimes, self._lineage_assignment, self._offset, self._knots, smooth_form, family
+        self._model = _backend.fit(
+            counts, pseudotimes, self._lineage_assignment, self._offset, self._knots, smooth_form, family, n_jobs
         )
-        gams = []
-        for gene_count in counts.T:
-            gams.append(backend.fit(y=gene_count))
-        self._model = gams
 
 
 def _check_cell_weights(cell_weights: np.ndarray) -> bool:

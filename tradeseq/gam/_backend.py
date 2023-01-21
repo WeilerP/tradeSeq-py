@@ -21,7 +21,6 @@ class GAM:
             rpy2 representation of fitted mgcv GAM object.
         """
         self._gam = gam
-        self._stats = importr("stats")
 
     def predict(self, lineage_assignment: np.ndarray, pseudotimes: np.ndarray, offsets: np.ndarray, log_scale: bool):
         """Predict gene count for new data.
@@ -44,6 +43,8 @@ class GAM:
         -------
         An np.ndarray of shape (``n_predictions``,) containing the predicted counts.
         """
+        stats = importr("stats")  # TODO: import only once
+
         n_lineages = lineage_assignment.shape[1]
         lineage_assignment = pd.DataFrame(
             data=lineage_assignment, columns=[f"l{lineage_id}" for lineage_id in range(1, n_lineages + 1)]
@@ -61,72 +62,8 @@ class GAM:
             return_type = "response"
 
         with localconverter(default_converter + pandas2ri.converter):
-            prediction = self._stats.predict(self._gam, parameters, type=return_type)
+            prediction = stats.predict(self._gam, parameters, type=return_type)
         return prediction
-
-
-class GAMFitting:
-    """Backend class used for fitting GAMs in R for multiple genes."""
-
-    # TODO: go directly to mgcv.gam by clicking
-    # TODO: separate R environments ?
-
-    def __init__(
-        self,
-        pseudotimes: np.ndarray,
-        w_sample: np.ndarray,
-        offset: np.ndarray,
-        knots: np.ndarray,
-        smooth_form: str,
-        family: str,
-    ):
-        """Initialize class and assign pseudotime and cell_weight values to corresponding variables in R.
-
-        Parameters
-        ----------
-        pseudotimes
-            A ``n_cells`` x ``n_lineage`` np.ndarray containing pseudotimes for every cell and lineage.
-        w_sample
-            A ``n_cells`` x ``n_lineage`` np.ndarray where each row contains exactly one `1` (the assigned lineage).
-            and `0` everywhere else.
-        offset
-            An np.ndarray of shape (``n_cells``,) containing cell specific offsets accounting for different library
-            sizes.
-        knots
-            Location of knots used for fitting the splines in the GAM.
-        smooth_form
-            Smooth form of the fitted GAM. Can be any formula accepted by mgcv.gam where y stands for gene expression
-            data, and l_{lineage_id}, t_{lineage_id} are variables for the lineage-assignment and the pseudotime values,
-            respectively.
-        family
-            Family of probability distributions that is used for fitting the GAM. Defaults to the negative binomial
-            distributions. Can be any family available in mgcv.gam.
-            TODO: change type hint to Literal
-        """
-        _assign_pseudotimes(pseudotimes)
-        _assign_lineages(w_sample)
-        _assign_offset(offset)
-        self._knots: List[float] = knots.astype(float).tolist()  # Convert to list to make conversion to R easier
-        self._smooth_form = smooth_form
-        self._family = family
-        self._mgcv = importr("mgcv")
-
-    def fit(self, y: np.ndarray) -> GAM:
-        """Fit GAM for a single gene.
-
-        Parameters
-        ----------
-        y
-            A np.ndarray of shape (``n_cells``,) containing gene expression data for a single gene.
-
-        Returns
-        -------
-            Fitted GAM object.
-        """
-        ro.globalenv["n_knots"] = len(self._knots)
-        ro.globalenv["y"] = ro.vectors.FloatVector(y)
-        gam = self._mgcv.gam(ro.Formula(self._smooth_form), family=self._family, knots=self._knots)
-        return GAM(gam)
 
 
 def _assign_pseudotimes(pseudotimes: np.ndarray):
@@ -185,3 +122,77 @@ def _assign_offset(offset: np.ndarray):
     np_cv_rules = default_converter + numpy2ri.converter
     with localconverter(np_cv_rules):
         ro.globalenv["offset"] = offset
+
+
+def fit(
+    counts: np.ndarray,
+    pseudotimes: np.ndarray,
+    w_sample: np.ndarray,
+    offset: np.ndarray,
+    knots: np.ndarray,
+    smooth_form: str,
+    family: str,
+    n_jobs: int,
+) -> List[GAM]:
+    """Fit GAMs for all genes using the R library mgcv.
+
+    Parameters
+    ----------
+    counts
+        A ``n_cell`` x ``n_lineage`` dense np.ndarry containing gene counts for every cell.
+    pseudotimes
+        A ``n_cells`` x ``n_lineage`` np.ndarray containing pseudotimes for every cell and lineage.
+    w_sample
+        A ``n_cells`` x ``n_lineage`` np.ndarray where each row contains exactly one `1` (the assigned lineage).
+        and `0` everywhere else.
+    offset
+        An np.ndarray of shape (``n_cells``,) containing cell specific offsets accounting for different library
+        sizes.
+    knots
+        Location of knots used for fitting the splines in the GAM.
+    smooth_form
+        Smooth form of the fitted GAM. Can be any formula accepted by mgcv.gam where y stands for gene expression
+        data, and l_{lineage_id}, t_{lineage_id} are variables for the lineage-assignment and the pseudotime values,
+        respectively.
+    family
+        Family of probability distributions that is used for fitting the GAM. Defaults to the negative binomial
+        distributions. Can be any family available in mgcv.gam.
+        TODO: change type hint to Literal
+    n_jobs
+        Number of jobs used for fitting the GAM. For n_jobs >= 2, the R library biocParallel is used.
+        TODO: maybe support for -1
+
+    Returns
+    -------
+        List of fitted GAM objects.
+    """
+    importr("mgcv")
+
+    ro.globalenv["counts"] = numpy2ri.converter.py2rpy(counts)
+    _assign_pseudotimes(pseudotimes)
+    _assign_lineages(w_sample)
+    _assign_offset(offset)
+    ro.globalenv["n_knots"] = len(knots)
+    ro.globalenv["smooth"] = ro.Formula(smooth_form)
+    ro.globalenv["knots"] = default_converter.py2rpy(knots.astype(float).tolist())
+    ro.globalenv["family"] = default_converter.py2rpy(family)
+    # TODO: error handling while fitting
+    ro.globalenv["fit"] = ro.r(
+        """
+        function(i){
+            data = list(y = counts[,i])
+            res <- mgcv::gam(smooth, family=family, knots =knots, data = data)
+            return(res)
+        }
+        """
+    )
+    if n_jobs > 1:
+        bioc = importr("BiocParallel")
+        param = bioc.MulticoreParam(worker=n_jobs, progressbar=True)
+        with localconverter(numpy2ri.converter + default_converter):
+            res = bioc.bplapply(list(range(1, counts.shape[1] + 1)), ro.globalenv["fit"], BPPARAM=param)
+    else:
+        base = importr("base")
+        res = base.lapply(list(range(1, counts.shape[1] + 1)), ro.globalenv["fit"])
+    print(f"Finished fitting {counts.shape[1]} GAMs")
+    return [GAM(gam) for gam in res]
