@@ -329,7 +329,8 @@ class GAM:
         def sample_lineage(cell_weights_row):
             return np.random.multinomial(1, cell_weights_row / np.sum(cell_weights_row))
 
-        return np.apply_along_axis(sample_lineage, 1, cell_weights), lineage_names
+        self._lineage_assignment = np.apply_along_axis(sample_lineage, 1, cell_weights)
+        self._lineage_names = lineage_names
 
     def _get_counts(
         self,
@@ -400,7 +401,7 @@ class GAM:
         n_knots
             Number of knots that are used for the splines in the GAM.
         """
-        self._lineage_assignment, self._lineage_names = self._assign_cells_to_lineages()
+        self._assign_cells_to_lineages()
         n_lineages = self._lineage_assignment.shape[1]
         self._knots = self._get_knots(n_knots)
         pseudotimes = self._get_pseudotime()
