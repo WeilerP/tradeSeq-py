@@ -4,6 +4,8 @@ import rpy2.robjects as ro
 
 import numpy as np
 
+from tradeseq.gam._backend import GAM
+
 
 class TradeseqR:
     def __init__(self, counts: np.ndarray, pseudotime: np.ndarray, cell_weights: np.ndarray, n_knots: int):
@@ -51,3 +53,7 @@ class TradeseqR:
             ro.globalenv["ind"] = ind
             coefficients = ro.r("gam[[ind]]$coefficients")
         return coefficients
+
+    def get_gam(self, ind: int):
+        # np_cv_rules = default_converter + numpy2ri.converter
+        return GAM(ro.globalenv["gam"])

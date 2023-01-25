@@ -25,6 +25,12 @@ class TestGAMFitting:
         assert np.allclose(knots, knots_tradeseq)
         assert np.allclose(offset, offset_tradeseq, rtol=0.1)  # There is a small difference between the offsets...
 
+        gam_tradeseq = tradeseq.get_gam(0)
+        prediction_tradeseq = gam_tradeseq.predict(cell_weights, pseudotimes, offset, log_scale=False)
+        gam.fit(n_knots=n_knots)
+        prediction = gam._model[0].predict(cell_weights, pseudotimes, offset, log_scale=False)
+        assert np.allclose(prediction, prediction_tradeseq)
+
     @given(
         gam=get_gam(n_vars=2, min_obs=60, max_obs=100, n_lineages=2),
         constant=st.integers(min_value=0, max_value=10),
