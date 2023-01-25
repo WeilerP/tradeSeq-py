@@ -397,6 +397,9 @@ class GAM:
             distributions. Can be any family available in mgcv.gam.
         n_knots
             Number of knots that are used for the splines in the GAM.
+        n_jobs
+            Number of jobs that are used for fitting. If n_jobs > 2, the r library biocParallel is used for fitting the
+            GAMs in parallel.
         """
         self._lineage_assignment, self._lineage_names = self._assign_cells_to_lineages()
         n_lineages = self._lineage_assignment.shape[1]
