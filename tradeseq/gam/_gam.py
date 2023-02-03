@@ -55,7 +55,7 @@ class GAM:
         self._n_lineages = n_lineages
 
         self._model: Optional[List[_backend.GAM]] = None
-        self._genes = None
+        self._genes: List[str] = None
 
         self._lineage_names: Optional[List[str]] = None
 
@@ -71,7 +71,12 @@ class GAM:
 
     # TODO: change so that list of gene_ids or gene_names are accepted
     def predict(
-        self, gene_id: int, lineage_assignment: np.ndarray, pseudotimes: np.ndarray, log_scale: bool = False
+        self,
+        gene_id: int,
+        lineage_assignment: np.ndarray,
+        pseudotimes: np.ndarray,
+        log_scale: bool = False,
+        error_estimates: bool = False,
     ) -> np.ndarray:
         """Predict gene count for new data according to fitted GAM.
 
@@ -80,14 +85,13 @@ class GAM:
         gene_id
             Index of the gene for which prediction is made.
         lineage_assignment
-            A ``n_predictions`` x ``n_lineage`` np.ndarray where each row contains exactly one 1 (the assigned lineage)
-            and 0 everywhere else. TODO: maybe easier to just have a list with lineage indices for every data point
+            A (``n_predictions``,) np.ndarray where each entry indicates the lineage index for the prediction point.
         pseudotimes
-            A ``n_prediction`` x ``n_lineage`` np.ndarray containing the pseudotime values for every lineage.
-            Note that only the pseudotimes of the corresponding lineage are considered.
-            TODO: probably easier to just have list of pseudotime values
+            A (``n_predictions``,) np.ndarray where each entry is the pseudotime value for the prediction point.
         log_scale
             Should predictions be returned in log_scale (this is not log1p-scale!).
+        error_estimates
+            Boolean indicating whether standard error estiamtes are returned for each prediction.
 
         Returns
         -------
@@ -95,14 +99,76 @@ class GAM:
         """
         if self._model is None:
             raise RuntimeError("No GAM fitted. The fit method has to be called first.")
+
+        n_predictions = lineage_assignment.shape[0]
+
+        pseudotimes = np.repeat(pseudotimes[:, np.newaxis], self._n_lineages, axis=1)
+        lineage_assign = np.zeros((n_predictions, self._n_lineages))
+        lineage_assign[list(range(n_predictions)), lineage_assignment] = 1
+
+        # offsets are just mean offsets of fitted data
+        offsets = np.repeat(self._offset.mean(), n_predictions)
+
+        if log_scale:
+            return_type = "link"
+        else:
+            return_type = "response"
+
+        return self._model[gene_id].predict(lineage_assign, pseudotimes, offsets, return_type, error_estimates)
+
+    def get_lpmatrix(self, gene_id: int, lineage_assignment: np.ndarray, pseudotimes: np.ndarray) -> np.ndarray:
+        """
+        Return linear predictor matrix of the GAM for the given gene with the given parameters.
+
+        Parameters
+        ----------
+        gene_id
+            Index of the gene for which the lpmatrix is returned.
+        lineage_assignment
+            A ``n_predictions`` x ``n_lineage`` np.ndarray where each row contains exactly one 1 (the assigned lineage)
+            and 0 everywhere else. TODO: maybe easier to just have a list with lineage indices for every data point
+        pseudotimes
+            A ``n_prediction`` x ``n_lineage`` np.ndarray containing the pseudotime values for every lineage.
+            Note that only the pseudotimes of the corresponding lineage are considered.
+            TODO: probably easier to just have list of pseudotime values
+
+        Returns
+        -------
+        A two dimensional np.ndarray, the linear preditor matrix.
+        """
+        if self._model is None:
+            raise RuntimeError("No GAM fitted. The fit method has to be called first.")
         if lineage_assignment.shape != pseudotimes.shape:
             raise RuntimeError("Lineage Assignment and Pseudotime have to have the same shape.")
 
-        # offsets are just mean offsets of fitted data
         n_predictions = lineage_assignment.shape[0]
+
+        pseudotimes = np.repeat(pseudotimes[:, np.newaxis], self._n_lineages, axis=1)
+        lineage_assign = np.zeros((n_predictions, self._n_lineages))
+        lineage_assign[list(range(n_predictions)), lineage_assignment] = 1
+
+        # offsets are just mean offsets of fitted data
         offsets = np.repeat(self._offset.mean(), n_predictions)
 
-        return self._model[gene_id].predict(lineage_assignment, pseudotimes, offsets, log_scale)
+        return self._model[gene_id].predict(lineage_assign, pseudotimes, offsets, "lpmatrix")
+
+    def get_covariance(self, gene_id: int) -> np.ndarray:
+        """
+        Return covariance matrix of the parameters fitted for the GAM for the given gene.
+
+        Parameters
+        ----------
+        gene_id
+            Index of the gene for which the covariance matrix of the parameters of the GAM are returned.
+
+        Returns
+        -------
+        A (``n_parameters``,``n_parameters``) np.ndarray, the covariance matrix.
+        """
+        if self._model is None:
+            raise RuntimeError("No GAM fitted. The fit method has to be called first.")
+
+        return self._model[gene_id].covariance_matrix
 
     def plot(
         self,
@@ -400,6 +466,9 @@ class GAM:
             distributions. Can be any family available in mgcv.gam.
         n_knots
             Number of knots that are used for the splines in the GAM.
+        n_jobs
+            Number of jobs that are used for fitting. If n_jobs > 2, the R library biocParallel is used for fitting the
+            GAMs in parallel.
         """
         self._assign_cells_to_lineages()
         n_lineages = self._lineage_assignment.shape[1]
@@ -407,7 +476,7 @@ class GAM:
         pseudotimes = self._get_pseudotime()
 
         use_raw = False
-        counts, _ = self._get_counts(use_raw)
+        counts, self._genes = self._get_counts(use_raw)
 
         if self._offset_key is None:
             self._offset = _calculate_offset(counts)
