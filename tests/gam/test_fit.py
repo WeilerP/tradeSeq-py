@@ -44,9 +44,7 @@ class TestGAMFitting:
         gam._adata.obsm[gam._weights_key] = weights
         gam.fit(n_knots=n_knots)
         prediction_n = 50
-        lineage_assignment = np.zeros((prediction_n, gam._n_lineages), dtype=int)
-        lineage_assignment[:, 0] = 1
-        pseudotime = np.linspace(0.0, 1, prediction_n)[:, np.newaxis]
-        pseudotime = np.repeat(pseudotime, gam._n_lineages, axis=1)
+        lineage_assignment = np.zeros((prediction_n,), dtype=int)
+        pseudotime = np.linspace(0.0, 1, prediction_n)
         prediction = gam.predict(gene_id=0, lineage_assignment=lineage_assignment, pseudotimes=pseudotime)
         assert np.allclose(prediction, constant)
