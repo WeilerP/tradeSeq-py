@@ -55,7 +55,7 @@ class GAM:
         self._n_lineages = n_lineages
 
         self._model: Optional[List[_backend.GAM]] = None
-        self._genes = None
+        self._genes: List[str] = None
 
         self._lineage_names: Optional[List[str]] = None
 
@@ -85,12 +85,9 @@ class GAM:
         gene_id
             Index of the gene for which prediction is made.
         lineage_assignment
-            A ``n_predictions`` x ``n_lineage`` np.ndarray where each row contains exactly one 1 (the assigned lineage)
-            and 0 everywhere else. TODO: maybe easier to just have a list with lineage indices for every data point
+            A (``n_predictions``,) np.ndarray where each entry indicates the lineage index for the prediction point.
         pseudotimes
-            A ``n_prediction`` x ``n_lineage`` np.ndarray containing the pseudotime values for every lineage.
-            Note that only the pseudotimes of the corresponding lineage are considered.
-            TODO: probably easier to just have list of pseudotime values
+            A (``n_predictions``,) np.ndarray where each entry is the pseudotime value for the prediction point.
         log_scale
             Should predictions be returned in log_scale (this is not log1p-scale!).
         error_estimates
@@ -103,8 +100,13 @@ class GAM:
         if self._model is None:
             raise RuntimeError("No GAM fitted. The fit method has to be called first.")
 
-        # offsets are just mean offsets of fitted data
         n_predictions = lineage_assignment.shape[0]
+
+        pseudotimes = np.repeat(pseudotimes[:, np.newaxis], self._n_lineages, axis=1)
+        lineage_assign = np.zeros((n_predictions, self._n_lineages))
+        lineage_assign[list(range(n_predictions)), lineage_assignment] = 1
+
+        # offsets are just mean offsets of fitted data
         offsets = np.repeat(self._offset.mean(), n_predictions)
 
         if log_scale:
@@ -112,7 +114,7 @@ class GAM:
         else:
             return_type = "response"
 
-        return self._model[gene_id].predict(lineage_assignment, pseudotimes, offsets, return_type, error_estimates)
+        return self._model[gene_id].predict(lineage_assign, pseudotimes, offsets, return_type, error_estimates)
 
     def get_lpmatrix(self, gene_id: int, lineage_assignment: np.ndarray, pseudotimes: np.ndarray) -> np.ndarray:
         """
@@ -137,11 +139,16 @@ class GAM:
         if self._model is None:
             raise RuntimeError("No GAM fitted. The fit method has to be called first.")
 
-        # offsets are just mean offsets of fitted data
         n_predictions = lineage_assignment.shape[0]
+
+        pseudotimes = np.repeat(pseudotimes[:, np.newaxis], self._n_lineages, axis=1)
+        lineage_assign = np.zeros((n_predictions, self._n_lineages))
+        lineage_assign[list(range(n_predictions)), lineage_assignment] = 1
+
+        # offsets are just mean offsets of fitted data
         offsets = np.repeat(self._offset.mean(), n_predictions)
 
-        return self._model[gene_id].predict(lineage_assignment, pseudotimes, offsets, "lpmatrix")
+        return self._model[gene_id].predict(lineage_assign, pseudotimes, offsets, "lpmatrix")
 
     def get_covariance(self, gene_id: int) -> np.ndarray:
         """
@@ -466,7 +473,7 @@ class GAM:
         pseudotimes = self._get_pseudotime()
 
         use_raw = False
-        counts, _ = self._get_counts(use_raw)
+        counts, self._genes = self._get_counts(use_raw)
 
         if self._offset_key is None:
             self._offset = _calculate_offset(counts)
