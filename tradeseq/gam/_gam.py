@@ -318,11 +318,27 @@ class GAM:
 
         return weights, names
 
+    def _get_pseudotimes_per_lineage(self) -> List[np.ndarray]:
+        """Get the pseudotime values per lineage
+
+        Returns
+        -------
+           A list with ``n_lineage`` many elements: each a np.ndarray with the pseudotime values of cells assigned to
+           this lineage.
+        """
+        pseudotimes = self._get_pseudotime()
+        # only consider pseudotimes of the lineage the cell is assigned to
+        lineage_pseudotimes = [
+            pseudotimes[:, i][np.where(self._lineage_assignment[:, i] == 1, True, False)]
+            for i in range(self._n_lineages)
+        ]
+        return lineage_pseudotimes
+
     def _get_knots(self, n_knots: int) -> np.ndarray:
         """Calculate knot locations at quantiles of pseudotime values (of all lineages).
 
         If possible, end points of lineages are used as knots.
-        Knot locations are stored in ``adata.uns[tradeSeq.knots]`` and returned.
+        Knot locations are returned and stored in ``self._knots``.
 
         Parameters
         ----------
@@ -334,11 +350,7 @@ class GAM:
         A np.ndarray of length ``n_knots`` with the found knot locations.
         """
         pseudotimes = self._get_pseudotime()
-        # only consider pseudotimes of the lineage the cell is assigned to
-        lineage_pseudotimes = [
-            pseudotimes[:, i][np.where(self._lineage_assignment[:, i] == 1, True, False)]
-            for i in range(self._n_lineages)
-        ]
+        lineage_pseudotimes = self._get_pseudotimes_per_lineage()
         quantiles = np.linspace(0.0, 1, n_knots)
         knots = np.quantile(np.concatenate(lineage_pseudotimes), quantiles)
         if np.unique(knots).size != n_knots:
