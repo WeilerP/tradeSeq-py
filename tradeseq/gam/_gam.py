@@ -329,8 +329,8 @@ class GAM:
         pseudotimes = self._get_pseudotime()
         # only consider pseudotimes of the lineage the cell is assigned to
         lineage_pseudotimes = [
-            pseudotimes[:, i][np.where(self._lineage_assignment[:, i] == 1, True, False)]
-            for i in range(self._n_lineages)
+            pseudotimes[:, lineage_id][np.where(self._lineage_assignment[:, lineage_id] == 1, True, False)]
+            for lineage_id in range(self._n_lineages)
         ]
         return lineage_pseudotimes
 
