@@ -134,7 +134,7 @@ class GAM:
 
         Returns
         -------
-        A two dimensional np.ndarray, the linear preditor matrix.
+        A two dimensional np.ndarray, the linear predictor matrix.
         """
         if self._model is None:
             raise RuntimeError("No GAM fitted. The fit method has to be called first.")
@@ -319,12 +319,12 @@ class GAM:
         return weights, names
 
     def _get_pseudotimes_per_lineage(self) -> List[np.ndarray]:
-        """Get the pseudotime values per lineage
+        """Get the pseudotime values per lineage.
 
         Returns
         -------
-           A list with ``n_lineage`` many elements: each a np.ndarray with the pseudotime values of cells assigned to
-           this lineage.
+        A list with ``n_lineage`` many elements: each a np.ndarray with the pseudotime values of cells assigned to this
+        lineage.
         """
         pseudotimes = self._get_pseudotime()
         # only consider pseudotimes of the lineage the cell is assigned to
