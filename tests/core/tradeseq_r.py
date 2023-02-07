@@ -57,6 +57,7 @@ class TradeseqR:
         return coefficients
 
     def get_prediction(self, ind: int, lineage_assignment, pseudotimes, offsets, log_scale):
+        # TODO: prediction method does not work yet
         importr("stats")
 
         n_lineages = lineage_assignment.shape[1]

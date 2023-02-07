@@ -25,24 +25,20 @@ class TestGAMFitting:
         assert np.allclose(knots, knots_tradeseq)
         assert np.allclose(offset, offset_tradeseq, rtol=0.1)  # There is a small difference between the offsets...
 
-        prediction_tradeseq = tradeseq.get_prediction(0, cell_weights, pseudotimes, offset, log_scale=False)
-        gam.fit(n_knots=n_knots)
-        prediction = gam._model[0].predict(cell_weights, pseudotimes, offset, log_scale=False)
-        assert np.allclose(prediction, prediction_tradeseq)
-
     @given(
         gam=get_gam(n_vars=2, min_obs=60, max_obs=100, n_lineages=2),
         constant=st.integers(min_value=0, max_value=10),
         n_knots=st.integers(min_value=2, max_value=4),
+        n_jobs=st.integers(min_value=1, max_value=2),
     )
-    @settings(max_examples=5, deadline=50000)
-    def test_constant(self, gam: GAM, constant: int, n_knots: int):
+    @settings(max_examples=10, deadline=50000)
+    def test_constant(self, gam: GAM, constant: int, n_knots: int, n_jobs: int):
         gam._adata.X = np.zeros((gam._adata.n_obs, gam._adata.n_vars), dtype=int) + constant
         gam._adata.obs[gam._time_key] = np.linspace(0, 5, gam._adata.n_obs)
         del gam._adata.obsm[gam._time_key]
         weights = np.ones((gam._adata.n_obs, gam._n_lineages))
         gam._adata.obsm[gam._weights_key] = weights
-        gam.fit(n_knots=n_knots)
+        gam.fit(n_knots=n_knots, n_jobs=n_jobs)
         prediction_n = 50
         lineage_assignment = np.zeros((prediction_n,), dtype=int)
         pseudotime = np.linspace(0.0, 1, prediction_n)
