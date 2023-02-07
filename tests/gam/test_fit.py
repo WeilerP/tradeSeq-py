@@ -48,3 +48,26 @@ class TestGAMFitting:
         pseudotime = np.linspace(0.0, 1, prediction_n)
         prediction = gam.predict(gene_id=0, lineage_assignment=lineage_assignment, pseudotimes=pseudotime)
         assert np.allclose(prediction, constant)
+
+    @given(
+        gam=get_gam(n_vars=2, min_obs=60, max_obs=100, n_lineages=2),
+        n_knots=st.integers(min_value=4, max_value=4),
+    )
+    @settings(max_examples=10, deadline=50000)
+    def test_linear(self, gam: GAM, n_knots: int):
+        gam._adata.X = np.exp(np.repeat(np.linspace(1, 5, gam._adata.n_obs)[:, np.newaxis], gam._adata.n_vars, axis=1))
+        gam._adata.obs[gam._time_key] = np.linspace(1, 5, gam._adata.n_obs)
+        del gam._adata.obsm[gam._time_key]
+        weights = np.ones((gam._adata.n_obs, gam._n_lineages))
+        gam._adata.obsm[gam._weights_key] = weights
+        gam._adata.obs["offset"] = np.ones(gam._adata.n_obs)
+        gam._offset_key = "offset"
+        gam.fit(n_knots=n_knots)
+
+        prediction_n = 50
+        lineage_assignment = np.zeros((prediction_n,), dtype=int)
+        pseudotime = np.linspace(1.0, 2, prediction_n)
+        prediction = gam.predict(
+            gene_id=0, lineage_assignment=lineage_assignment, pseudotimes=pseudotime, log_scale=True
+        )
+        assert np.allclose(prediction, pseudotime)
