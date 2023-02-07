@@ -99,6 +99,12 @@ class GAM:
         """
         self.check_is_fitted()
 
+        if lineage_assignment.shape != pseudotimes.shape or lineage_assignment.ndim != 1:
+            raise ValueError(
+                "The arguments lineage_assignment and pseudotimes should have the same length and have to "
+                "be one dimensional."
+            )
+
         n_predictions = lineage_assignment.shape[0]
 
         pseudotimes = np.repeat(pseudotimes[:, np.newaxis], self._n_lineages, axis=1)
@@ -132,6 +138,12 @@ class GAM:
         A two dimensional np.ndarray, the linear preditor matrix.
         """
         self.check_is_fitted()
+
+        if lineage_assignment.shape != pseudotimes.shape or lineage_assignment.ndim != 1:
+            raise ValueError(
+                "The arguments lineage_assignment and pseudotimes should have the same length and have to "
+                "be one dimensional."
+            )
 
         n_predictions = lineage_assignment.shape[0]
 
