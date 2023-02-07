@@ -97,8 +97,7 @@ class GAM:
         -------
         An np.ndarray of shape (``n_predictions``,) containing the predicted counts.
         """
-        if self._model is None:
-            raise RuntimeError("No GAM fitted. The fit method has to be called first.")
+        self.check_is_fitted()
 
         n_predictions = lineage_assignment.shape[0]
 
@@ -136,9 +135,7 @@ class GAM:
         -------
         A two dimensional np.ndarray, the linear preditor matrix.
         """
-        if self._model is None:
-            raise RuntimeError("No GAM fitted. The fit method has to be called first.")
-
+        self.check_is_fitted()
         n_predictions = lineage_assignment.shape[0]
 
         pseudotimes = np.repeat(pseudotimes[:, np.newaxis], self._n_lineages, axis=1)
@@ -163,8 +160,7 @@ class GAM:
         -------
         A (``n_parameters``,``n_parameters``) np.ndarray, the covariance matrix.
         """
-        if self._model is None:
-            raise RuntimeError("No GAM fitted. The fit method has to be called first.")
+        self.check_is_fitted()
 
         return self._model[gene_id].covariance_matrix
 
@@ -244,6 +240,11 @@ class GAM:
 
         plt.legend()
         plt.show()
+
+    def check_is_fitted(self):
+        """Check whether GAMs have already been fitted. If not raises RunTimeError."""
+        if self._model is None:
+            raise RuntimeError("No GAM fitted. The fit method has to be called first.")
 
     def _get_pseudotime(self) -> np.ndarray:
         """Retrieve pseudotime from ``self._adata``.
