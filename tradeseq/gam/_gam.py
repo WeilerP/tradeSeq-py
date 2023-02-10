@@ -71,12 +71,7 @@ class GAM:
 
     # TODO: change so that list of gene_ids or gene_names are accepted
     def predict(
-        self,
-        gene_id: int,
-        lineage_assignment: np.ndarray,
-        pseudotimes: np.ndarray,
-        log_scale: bool = False,
-        error_estimates: bool = False,
+        self, gene_id: int, lineage_assignment: np.ndarray, pseudotimes: np.ndarray, log_scale: bool = False
     ) -> np.ndarray:
         """Predict gene count for new data according to fitted GAM.
 
@@ -90,21 +85,23 @@ class GAM:
             A (``n_predictions``,) np.ndarray where each entry is the pseudotime value for the prediction point.
         log_scale
             Should predictions be returned in log_scale (this is not log1p-scale!).
-        error_estimates
-            Boolean indicating whether standard error estiamtes are returned for each prediction.
 
         Returns
         -------
         An np.ndarray of shape (``n_predictions``,) containing the predicted counts.
         """
-        if self._model is None:
-            raise RuntimeError("No GAM fitted. The fit method has to be called first.")
+        self.check_is_fitted()
+
+        if lineage_assignment.shape != pseudotimes.shape or lineage_assignment.ndim != 1:
+            raise ValueError(
+                "The arguments lineage_assignment and pseudotimes should have the same length and have to "
+                "be one dimensional."
+            )
 
         n_predictions = lineage_assignment.shape[0]
 
         pseudotimes = np.repeat(pseudotimes[:, np.newaxis], self._n_lineages, axis=1)
-        lineage_assign = np.zeros((n_predictions, self._n_lineages))
-        lineage_assign[list(range(n_predictions)), lineage_assignment] = 1
+        lineage_indicator = _indices_to_indicator_matrix(lineage_assignment, self._n_lineages)
 
         # offsets are just mean offsets of fitted data
         offsets = np.repeat(self._offset.mean(), n_predictions)
@@ -114,7 +111,7 @@ class GAM:
         else:
             return_type = "response"
 
-        return self._model[gene_id].predict(lineage_assign, pseudotimes, offsets, return_type, error_estimates)
+        return self._model[gene_id].predict(lineage_indicator, pseudotimes, offsets, return_type)
 
     def get_lpmatrix(self, gene_id: int, lineage_assignment: np.ndarray, pseudotimes: np.ndarray) -> np.ndarray:
         """
@@ -125,32 +122,31 @@ class GAM:
         gene_id
             Index of the gene for which the lpmatrix is returned.
         lineage_assignment
-            A ``n_predictions`` x ``n_lineage`` np.ndarray where each row contains exactly one 1 (the assigned lineage)
-            and 0 everywhere else. TODO: maybe easier to just have a list with lineage indices for every data point
+            A (``n_predictions``,) np.ndarray where each integer entry indicates the lineage index for the prediction point.
         pseudotimes
-            A ``n_prediction`` x ``n_lineage`` np.ndarray containing the pseudotime values for every lineage.
-            Note that only the pseudotimes of the corresponding lineage are considered.
-            TODO: probably easier to just have list of pseudotime values
+            A (``n_predictions``,) np.ndarray where each entry is the pseudotime value for the prediction point.
 
         Returns
         -------
-        A two dimensional np.ndarray, the linear preditor matrix.
+        A two dimensional np.ndarray, the linear predictor matrix.
         """
-        if self._model is None:
-            raise RuntimeError("No GAM fitted. The fit method has to be called first.")
-        if lineage_assignment.shape != pseudotimes.shape:
-            raise RuntimeError("Lineage Assignment and Pseudotime have to have the same shape.")
+        self.check_is_fitted()
+
+        if lineage_assignment.shape != pseudotimes.shape or lineage_assignment.ndim != 1:
+            raise ValueError(
+                "The arguments lineage_assignment and pseudotimes should have the same length and have to "
+                "be one dimensional."
+            )
 
         n_predictions = lineage_assignment.shape[0]
 
         pseudotimes = np.repeat(pseudotimes[:, np.newaxis], self._n_lineages, axis=1)
-        lineage_assign = np.zeros((n_predictions, self._n_lineages))
-        lineage_assign[list(range(n_predictions)), lineage_assignment] = 1
+        lineage_indicator = _indices_to_indicator_matrix(lineage_assignment, self._n_lineages)
 
         # offsets are just mean offsets of fitted data
         offsets = np.repeat(self._offset.mean(), n_predictions)
 
-        return self._model[gene_id].predict(lineage_assign, pseudotimes, offsets, "lpmatrix")
+        return self._model[gene_id].predict(lineage_indicator, pseudotimes, offsets, "lpmatrix")
 
     def get_covariance(self, gene_id: int) -> np.ndarray:
         """
@@ -165,8 +161,7 @@ class GAM:
         -------
         A (``n_parameters``,``n_parameters``) np.ndarray, the covariance matrix.
         """
-        if self._model is None:
-            raise RuntimeError("No GAM fitted. The fit method has to be called first.")
+        self.check_is_fitted()
 
         return self._model[gene_id].covariance_matrix
 
@@ -247,6 +242,11 @@ class GAM:
         plt.legend()
         plt.show()
 
+    def check_is_fitted(self):
+        """Check whether GAMs have already been fitted. If not raises RunTimeError."""
+        if self._model is None:
+            raise RuntimeError("No GAM fitted. The fit method has to be called first.")
+
     def _get_pseudotime(self) -> np.ndarray:
         """Retrieve pseudotime from ``self._adata``.
 
@@ -311,28 +311,28 @@ class GAM:
             weights = np.asarray(data)
             names = [str(i) for i in range(data.shape[1])]
 
-        if weights.ndim != 2 or weights.shape != (self._adata.n_obs, self._n_lineages):
+        if weights.ndim != 2 or weights.shape[0] != self._adata.n_obs:
             raise (
                 f"Invalid cell weight shape.\n"
-                f"Expected shape: ({self._adata.n_obs}, {self._n_lineages}).\n"
+                f"Expected shape: ({self._adata.n_obs}, n_lineages).\n"
                 f"Actual shape: {data.shape}."
             )
 
         return weights, names
 
     def _get_pseudotimes_per_lineage(self) -> List[np.ndarray]:
-        """Get the pseudotime values per lineage
+        """Get the pseudotime values per lineage.
 
         Returns
         -------
-           A list with ``n_lineage`` many elements: each a np.ndarray with the pseudotime values of cells assigned to
-           this lineage.
+        A list with ``n_lineage`` many elements: each a np.ndarray with the pseudotime values of cells assigned to this
+        lineage.
         """
         pseudotimes = self._get_pseudotime()
         # only consider pseudotimes of the lineage the cell is assigned to
         lineage_pseudotimes = [
-            pseudotimes[:, i][np.where(self._lineage_assignment[:, i] == 1, True, False)]
-            for i in range(self._n_lineages)
+            pseudotimes[self._lineage_assignment[:, lineage_id].astype(bool), lineage_id]
+            for lineage_id in range(self._n_lineages)
         ]
         return lineage_pseudotimes
 
@@ -372,7 +372,7 @@ class GAM:
                 knots = np.linspace(0.0, pseudotimes.max(), n_knots)
 
         # try to add end points of all lineages to knots
-        end_points = [times.max(initial=0) for times in lineage_pseudotimes]
+        end_points = [times.max() for times in lineage_pseudotimes]
 
         def get_closest_knot(end_point):
             return np.argmin(np.abs(knots - end_point))
@@ -405,8 +405,7 @@ class GAM:
         def sample_lineage(cell_weights_row):
             return np.random.multinomial(1, cell_weights_row / np.sum(cell_weights_row))
 
-        self._lineage_assignment = np.apply_along_axis(sample_lineage, 1, cell_weights)
-        self._lineage_names = lineage_names
+        return np.apply_along_axis(sample_lineage, 1, cell_weights), lineage_names
 
     def _get_counts(
         self,
@@ -480,7 +479,7 @@ class GAM:
             Number of jobs that are used for fitting. If n_jobs > 2, the R library biocParallel is used for fitting the
             GAMs in parallel.
         """
-        self._assign_cells_to_lineages()
+        self._lineage_assignment, self._lineage_names = self._assign_cells_to_lineages()
         n_lineages = self._lineage_assignment.shape[1]
         self._knots = self._get_knots(n_knots)
         pseudotimes = self._get_pseudotime()
@@ -500,6 +499,24 @@ class GAM:
         self._model = _backend.fit(
             counts, pseudotimes, self._lineage_assignment, self._offset, self._knots, smooth_form, family, n_jobs
         )
+
+
+def _indices_to_indicator_matrix(indices: np.ndarray, n_indices: int):
+    """
+    Compute indicator matrice from indices.
+
+    Parameter
+    ---------
+    indices:
+        One-dimensional np.ndarray of indices (assumed to be in [0,``n_indice``[ ).
+    n_indices:
+        Number of indices (maximum index value +1)
+
+    Returns
+    -------
+    A (``len(indices)``, ``n_indices``) indicator matrix.
+    """
+    return (indices.reshape(-1, 1) == list(range(n_indices))).astype(int)
 
 
 def _check_cell_weights(cell_weights: np.ndarray) -> bool:
@@ -533,13 +550,8 @@ def _calculate_offset(counts: np.ndarray) -> np.ndarray:
     An np.ndarray of shape (``n_cell``,) containing an offset for each cell.
     """
     norm_factors = tmm_norm_factors(counts.T)
-    if np.isnan(norm_factors).any():
-        norm_factors = np.ones(counts.shape[0])
-        warnings.warn(
-            "TMM normalization failed for some cells. Will use unnormalized library sizes as offset", RuntimeWarning
-        )
     library_size = counts.sum(axis=1) * norm_factors.flatten()
-    offset = np.log1p(library_size)  # TODO: changed from log to log1p
+    offset = np.log(library_size)
     if (offset == 0).any():
         # TODO: I do not really understand why this is done
         warnings.warn("Some calculated offsets are 0, offsetting these to 1.", RuntimeWarning)
