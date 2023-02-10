@@ -55,7 +55,7 @@ class GAM:
         self._n_lineages = n_lineages
 
         self._model: Optional[List[_backend.GAM]] = None
-        self._genes = None
+        self._genes: List[str] = None
 
         self._lineage_names: Optional[List[str]] = None
 
@@ -80,12 +80,9 @@ class GAM:
         gene_id
             Index of the gene for which prediction is made.
         lineage_assignment
-            A ``n_predictions`` x ``n_lineage`` np.ndarray where each row contains exactly one 1 (the assigned lineage)
-            and 0 everywhere else. TODO: maybe easier to just have a list with lineage indices for every data point
+            A (``n_predictions``,) np.ndarray where each integer entry indicates the lineage index for the prediction point.
         pseudotimes
-            A ``n_prediction`` x ``n_lineage`` np.ndarray containing the pseudotime values for every lineage.
-            Note that only the pseudotimes of the corresponding lineage are considered.
-            TODO: probably easier to just have list of pseudotime values
+            A (``n_predictions``,) np.ndarray where each entry is the pseudotime value for the prediction point.
         log_scale
             Should predictions be returned in log_scale (this is not log1p-scale!).
 
@@ -93,14 +90,80 @@ class GAM:
         -------
         An np.ndarray of shape (``n_predictions``,) containing the predicted counts.
         """
-        if self._model is None:
-            raise RuntimeError("No GAM fitted. The fit method has to be called first.")
+        self.check_is_fitted()
+
+        if lineage_assignment.shape != pseudotimes.shape or lineage_assignment.ndim != 1:
+            raise ValueError(
+                "The arguments lineage_assignment and pseudotimes should have the same length and have to "
+                "be one dimensional."
+            )
+
+        n_predictions = lineage_assignment.shape[0]
+
+        pseudotimes = np.repeat(pseudotimes[:, np.newaxis], self._n_lineages, axis=1)
+        lineage_indicator = _indices_to_indicator_matrix(lineage_assignment, self._n_lineages)
 
         # offsets are just mean offsets of fitted data
-        n_predictions = lineage_assignment.shape[0]
         offsets = np.repeat(self._offset.mean(), n_predictions)
 
-        return self._model[gene_id].predict(lineage_assignment, pseudotimes, offsets, log_scale)
+        if log_scale:
+            return_type = "link"
+        else:
+            return_type = "response"
+
+        return self._model[gene_id].predict(lineage_indicator, pseudotimes, offsets, return_type)
+
+    def get_lpmatrix(self, gene_id: int, lineage_assignment: np.ndarray, pseudotimes: np.ndarray) -> np.ndarray:
+        """
+        Return linear predictor matrix of the GAM for the given gene with the given parameters.
+
+        Parameters
+        ----------
+        gene_id
+            Index of the gene for which the lpmatrix is returned.
+        lineage_assignment
+            A (``n_predictions``,) np.ndarray where each integer entry indicates the lineage index for the prediction point.
+        pseudotimes
+            A (``n_predictions``,) np.ndarray where each entry is the pseudotime value for the prediction point.
+
+        Returns
+        -------
+        A two dimensional np.ndarray, the linear predictor matrix.
+        """
+        self.check_is_fitted()
+
+        if lineage_assignment.shape != pseudotimes.shape or lineage_assignment.ndim != 1:
+            raise ValueError(
+                "The arguments lineage_assignment and pseudotimes should have the same length and have to "
+                "be one dimensional."
+            )
+
+        n_predictions = lineage_assignment.shape[0]
+
+        pseudotimes = np.repeat(pseudotimes[:, np.newaxis], self._n_lineages, axis=1)
+        lineage_indicator = _indices_to_indicator_matrix(lineage_assignment, self._n_lineages)
+
+        # offsets are just mean offsets of fitted data
+        offsets = np.repeat(self._offset.mean(), n_predictions)
+
+        return self._model[gene_id].predict(lineage_indicator, pseudotimes, offsets, "lpmatrix")
+
+    def get_covariance(self, gene_id: int) -> np.ndarray:
+        """
+        Return covariance matrix of the parameters fitted for the GAM for the given gene.
+
+        Parameters
+        ----------
+        gene_id
+            Index of the gene for which the covariance matrix of the parameters of the GAM are returned.
+
+        Returns
+        -------
+        A (``n_parameters``,``n_parameters``) np.ndarray, the covariance matrix.
+        """
+        self.check_is_fitted()
+
+        return self._model[gene_id].covariance_matrix
 
     def plot(
         self,
@@ -150,14 +213,12 @@ class GAM:
         for id in lineage_id:
             equally_spaced = np.linspace(times_fitted[id].min(), times_fitted[id].max(), resolution)
             times_pred.append(equally_spaced)
-            # create matrix with pseudotimes for every lineage (needed for prediction)
-            times = np.zeros((resolution, n_lineages))
-            times[:, id] = times_pred[-1]
 
-            lineage_pred = np.zeros((resolution, n_lineages))
-            lineage_pred[:, id] = 1
+            lineage_pred = (
+                np.zeros(resolution, dtype=int) + id
+            )  # assign every predciton point to lineage with lineage id: id
 
-            counts_pred.append(self.predict(gene_id, lineage_pred, times, log_scale=False))
+            counts_pred.append(self.predict(gene_id, lineage_pred, equally_spaced, log_scale=False))
 
         for times, counts in zip(times_fitted, counts_fitted):
             if log_scale:
@@ -180,6 +241,11 @@ class GAM:
 
         plt.legend()
         plt.show()
+
+    def check_is_fitted(self):
+        """Check whether GAMs have already been fitted. If not raises RunTimeError."""
+        if self._model is None:
+            raise RuntimeError("No GAM fitted. The fit method has to be called first.")
 
     def _get_pseudotime(self) -> np.ndarray:
         """Retrieve pseudotime from ``self._adata``.
@@ -254,11 +320,27 @@ class GAM:
 
         return weights, names
 
+    def _get_pseudotimes_per_lineage(self) -> List[np.ndarray]:
+        """Get the pseudotime values per lineage.
+
+        Returns
+        -------
+        A list with ``n_lineage`` many elements: each a np.ndarray with the pseudotime values of cells assigned to this
+        lineage.
+        """
+        pseudotimes = self._get_pseudotime()
+        # only consider pseudotimes of the lineage the cell is assigned to
+        lineage_pseudotimes = [
+            pseudotimes[self._lineage_assignment[:, lineage_id].astype(bool), lineage_id]
+            for lineage_id in range(self._n_lineages)
+        ]
+        return lineage_pseudotimes
+
     def _get_knots(self, n_knots: int) -> np.ndarray:
         """Calculate knot locations at quantiles of pseudotime values (of all lineages).
 
         If possible, end points of lineages are used as knots.
-        Knot locations are stored in ``adata.uns[tradeSeq.knots]`` and returned.
+        Knot locations are returned and stored in ``self._knots``.
 
         Parameters
         ----------
@@ -270,11 +352,7 @@ class GAM:
         A np.ndarray of length ``n_knots`` with the found knot locations.
         """
         pseudotimes = self._get_pseudotime()
-        # only consider pseudotimes of the lineage the cell is assigned to
-        lineage_pseudotimes = [
-            pseudotimes[:, i][np.where(self._lineage_assignment[:, i] == 1, True, False)]
-            for i in range(self._n_lineages)
-        ]
+        lineage_pseudotimes = self._get_pseudotimes_per_lineage()
         quantiles = np.linspace(0.0, 1, n_knots)
         knots = np.quantile(np.concatenate(lineage_pseudotimes), quantiles)
         if np.unique(knots).size != n_knots:
@@ -407,7 +485,7 @@ class GAM:
         pseudotimes = self._get_pseudotime()
 
         use_raw = False
-        counts, _ = self._get_counts(use_raw)
+        counts, self._genes = self._get_counts(use_raw)
 
         if self._offset_key is None:
             self._offset = _calculate_offset(counts)
@@ -421,6 +499,24 @@ class GAM:
         self._model = _backend.fit(
             counts, pseudotimes, self._lineage_assignment, self._offset, self._knots, smooth_form, family, n_jobs
         )
+
+
+def _indices_to_indicator_matrix(indices: np.ndarray, n_indices: int):
+    """
+    Compute indicator matrice from indices.
+
+    Parameter
+    ---------
+    indices:
+        One-dimensional np.ndarray of indices (assumed to be in [0,``n_indice``[ ).
+    n_indices:
+        Number of indices (maximum index value +1)
+
+    Returns
+    -------
+    A (``len(indices)``, ``n_indices``) indicator matrix.
+    """
+    return (indices.reshape(-1, 1) == list(range(n_indices))).astype(int)
 
 
 def _check_cell_weights(cell_weights: np.ndarray) -> bool:

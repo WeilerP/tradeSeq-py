@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Literal
 
 from rpy2.robjects import numpy2ri, pandas2ri, default_converter
 from rpy2.robjects.packages import importr
@@ -21,8 +21,15 @@ class GAM:
             rpy2 representation of fitted mgcv GAM object.
         """
         self._gam = gam
+        self.covariance_matrix: np.ndarray = _get_covariance_matrix(gam)
 
-    def predict(self, lineage_assignment: np.ndarray, pseudotimes: np.ndarray, offsets: np.ndarray, log_scale: bool):
+    def predict(
+        self,
+        lineage_assignment: np.ndarray,
+        pseudotimes: np.ndarray,
+        offsets: np.ndarray,
+        return_type: Literal["response", "link", "lpmatrix"],
+    ):
         """Predict gene count for new data.
 
         Parameters
@@ -36,12 +43,15 @@ class GAM:
             TODO: probably easier to just have list of pseudotime values
         offsets
             An np.ndarray of shape (``n_prediction``,) containing offsets for each prediciton point.
-        log_scale
-            Should predictions be returned in log_scale (this is not log1p-scale!).
+        return_type
+            Should predictions be returned in log_scale ("link"), linear scale ("response") or as a linear predictor
+            matrix ("lpmatrix")
 
         Returns
         -------
-        An np.ndarray of shape (``n_predictions``,) containing the predicted counts.
+        A np.ndarray of shape (``n_predictions``,) containing the predicted counts if return_type is "link" or "log".
+        A np.ndarray of shape (``n_predictions``,``n_variables``), the linear predictor matrix if return_type is
+        "lpmatrix".
         """
         stats = importr("stats")  # TODO: import only once
 
@@ -56,14 +66,17 @@ class GAM:
 
         parameters = pd.concat([lineage_assignment, pseudotimes, offsets], axis=1)
 
-        if log_scale:
-            return_type = "link"
-        else:
-            return_type = "response"
-
         with localconverter(default_converter + pandas2ri.converter):
             prediction = stats.predict(self._gam, parameters, type=return_type)
         return prediction
+
+
+def _get_covariance_matrix(gam) -> np.ndarray:
+    np_cv_rules = default_converter + numpy2ri.converter + pandas2ri.converter
+    with localconverter(np_cv_rules):
+        ro.globalenv["gam"] = gam
+        covariance = ro.r("gam$Vp")
+    return covariance
 
 
 def _assign_pseudotimes(pseudotimes: np.ndarray):
