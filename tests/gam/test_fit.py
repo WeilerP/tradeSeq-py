@@ -25,6 +25,8 @@ class TestGAMFitting:
         assert np.allclose(knots, knots_tradeseq)
         assert np.allclose(offset, offset_tradeseq, rtol=0.1)  # There is a small difference between the offsets...
 
+        # TODO: compare predictions with tradeseq
+
     @given(
         gam=get_gam(n_vars=2, min_obs=60, max_obs=100, n_lineages=2),
         constant=st.integers(min_value=0, max_value=10),
