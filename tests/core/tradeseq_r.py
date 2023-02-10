@@ -8,6 +8,10 @@ from tradeseq.gam._backend import GAM
 
 
 class TradeseqR:
+    """
+    Bridge to tradeseq R implementation.
+    """
+
     def __init__(self, counts: np.ndarray, pseudotime: np.ndarray, cell_weights: np.ndarray, n_knots: int):
         np_cv_rules = default_converter + numpy2ri.converter
         with localconverter(np_cv_rules):
