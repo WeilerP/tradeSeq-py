@@ -71,12 +71,7 @@ class GAM:
 
     # TODO: change so that list of gene_ids or gene_names are accepted
     def predict(
-        self,
-        gene_id: int,
-        lineage_assignment: np.ndarray,
-        pseudotimes: np.ndarray,
-        log_scale: bool = False,
-        error_estimates: bool = False,
+        self, gene_id: int, lineage_assignment: np.ndarray, pseudotimes: np.ndarray, log_scale: bool = False
     ) -> np.ndarray:
         """Predict gene count for new data according to fitted GAM.
 
@@ -90,8 +85,6 @@ class GAM:
             A (``n_predictions``,) np.ndarray where each entry is the pseudotime value for the prediction point.
         log_scale
             Should predictions be returned in log_scale (this is not log1p-scale!).
-        error_estimates
-            Boolean indicating whether standard error estiamtes are returned for each prediction.
 
         Returns
         -------
@@ -118,7 +111,7 @@ class GAM:
         else:
             return_type = "response"
 
-        return self._model[gene_id].predict(lineage_indicator, pseudotimes, offsets, return_type, error_estimates)
+        return self._model[gene_id].predict(lineage_indicator, pseudotimes, offsets, return_type)
 
     def get_lpmatrix(self, gene_id: int, lineage_assignment: np.ndarray, pseudotimes: np.ndarray) -> np.ndarray:
         """

@@ -29,7 +29,6 @@ class GAM:
         pseudotimes: np.ndarray,
         offsets: np.ndarray,
         return_type: Literal["response", "link", "lpmatrix"],
-        error_estimates: bool = False,
     ):
         """Predict gene count for new data.
 
@@ -44,14 +43,15 @@ class GAM:
             TODO: probably easier to just have list of pseudotime values
         offsets
             An np.ndarray of shape (``n_prediction``,) containing offsets for each prediciton point.
-        log_scale
-            Should predictions be returned in log_scale (this is not log1p-scale!).
-        error_estimates
-            Boolean indicating whether standard error estimates are returned for each prediction.
+        return_type
+            Should predictions be returned in log_scale ("link"), linear scale ("response") or as a linear predictor
+            matrix ("lpmatrix")
 
         Returns
         -------
-        An np.ndarray of shape (``n_predictions``,) containing the predicted counts.
+        A np.ndarray of shape (``n_predictions``,) containing the predicted counts if return_type is "link" or "log".
+        A np.ndarray of shape (``n_predictions``,``n_variables``), the linear predictor matrix if return_type is
+        "lpmatrix".
         """
         stats = importr("stats")  # TODO: import only once
 
@@ -67,7 +67,7 @@ class GAM:
         parameters = pd.concat([lineage_assignment, pseudotimes, offsets], axis=1)
 
         with localconverter(default_converter + pandas2ri.converter):
-            prediction = stats.predict(self._gam, parameters, type=return_type, se_fit=error_estimates)
+            prediction = stats.predict(self._gam, parameters, type=return_type)
         return prediction
 
 
