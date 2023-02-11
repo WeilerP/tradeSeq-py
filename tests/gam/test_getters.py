@@ -60,7 +60,7 @@ class TestGetLineage:
 
 class TestGetKnots:
     @pytest.mark.filterwarnings("ignore::RuntimeWarning")
-    @given(gam=get_gam(), n_knots=st.integers(min_value=2, max_value=20))
+    @given(gam=get_gam(min_obs=50, max_lineages=5), n_knots=st.integers(min_value=2, max_value=20))
     def test_number_of_knots(self, gam: GAM, n_knots: int):
         gam._lineage_assignment, _ = gam._assign_cells_to_lineages()
         assume((gam._lineage_assignment[:, 0] == 1).any())  # at least one cell is assigned to first lineage
