@@ -11,12 +11,14 @@ from tests.core.tradeseq_r import TradeseqR
 class TestGAMFitting:
     def test_tradeseq_r(self):
         n_knots = 6
-        adata = ad.read("../_data/tradeseqTutorialData.h5ad")  # Data is modified such that it has deterministic weights
+        adata = ad.read(
+            "tests/_data/tradeseqTutorialData.h5ad"
+        )  # Data is modified such that it has deterministic weights
         gam = GAM(adata, 2, "pseudotime", "lineage")
         cell_weights, _ = gam._get_lineage()
         pseudotimes = gam._get_pseudotime()
         counts, _ = gam._get_counts()
-        gam._assign_cells_to_lineages()
+        gam._lineage_assignment, _ = gam._assign_cells_to_lineages()
         knots = gam._get_knots(n_knots)
         offset = _calculate_offset(counts)
         tradeseq = TradeseqR(counts, pseudotimes, cell_weights, n_knots)
