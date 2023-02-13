@@ -55,6 +55,7 @@ class TestGAMFitting:
     )
     @settings(max_examples=10, deadline=50000)
     def test_linear(self, gam: GAM, n_knots: int):
+        # TODO: scale different features by factor
         gam._adata.X = np.exp(np.repeat(np.linspace(1, 5, gam._adata.n_obs)[:, np.newaxis], gam._adata.n_vars, axis=1))
         gam._adata.obs[gam._time_key] = np.linspace(1, 5, gam._adata.n_obs)
         del gam._adata.obsm[gam._time_key]
