@@ -86,8 +86,8 @@ def get_adata(
         counts = csr_matrix(counts)
 
     adata = AnnData(counts)
-    adata.obs_names = [f"Cell_{i:d}" for i in range(adata.n_obs)]
-    adata.var_names = [f"Gene_{i:d}" for i in range(adata.n_vars)]
+    adata.obs_names = [f"Cell_{obs_id:d}" for obs_id in range(adata.n_obs)]
+    adata.var_names = [f"Gene_{var_id:d}" for var_id in range(adata.n_vars)]
 
     adata.obsm[time_key] = pseudotimes
     adata.obsm[time_key][0, 0] = MAX_INT_VALUE  # make sure that first lineage is longest
