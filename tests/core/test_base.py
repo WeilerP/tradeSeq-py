@@ -65,6 +65,8 @@ def get_adata(
         offset_key = draw(st.text())
 
     counts = np.random.poisson(1, size=(n_obs, n_vars))
+    if sparse_matrix:
+        counts = csr_matrix(counts)
 
     if deterministic_weights:
         # every cell is assigned to exactly one lineage
@@ -81,9 +83,6 @@ def get_adata(
         )
 
     pseudotimes = np.random.uniform(0, MAX_INT_VALUE - 1, size=(n_obs, n_lineages))
-
-    if sparse_matrix:
-        counts = csr_matrix(counts)
 
     adata = AnnData(counts)
     adata.obs_names = [f"Cell_{obs_id:d}" for obs_id in range(adata.n_obs)]

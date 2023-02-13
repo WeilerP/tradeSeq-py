@@ -43,9 +43,9 @@ class TestGAMFitting:
         weights = np.ones((gam._adata.n_obs, gam._n_lineages))
         gam._adata.obsm[gam._weights_key] = weights
         gam.fit(n_knots=n_knots, n_jobs=n_jobs)
-        prediction_n = 50
-        lineage_assignment = np.zeros((prediction_n,), dtype=int)
-        pseudotime = np.linspace(0.0, 1, prediction_n)
+        n_predictions = 50
+        lineage_assignment = np.zeros((n_predictions,), dtype=int)
+        pseudotime = np.linspace(0.0, 1, n_predictions)
         prediction = gam.predict(gene_id=0, lineage_assignment=lineage_assignment, pseudotimes=pseudotime)
         assert np.allclose(prediction, constant)
 
@@ -64,9 +64,9 @@ class TestGAMFitting:
         gam._offset_key = "offset"
         gam.fit(n_knots=n_knots)
 
-        prediction_n = 50
-        lineage_assignment = np.zeros((prediction_n,), dtype=int)
-        pseudotime = np.linspace(1.0, 2, prediction_n)
+        n_predictions = 50
+        lineage_assignment = np.zeros((n_predictions,), dtype=int)
+        pseudotime = np.linspace(1.0, 2, n_predictions)
         prediction = gam.predict(
             gene_id=0, lineage_assignment=lineage_assignment, pseudotimes=pseudotime, log_scale=True
         )
