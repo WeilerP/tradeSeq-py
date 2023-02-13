@@ -556,4 +556,7 @@ def _calculate_offset(counts: np.ndarray) -> np.ndarray:
         # TODO: I do not really understand why this is done
         warnings.warn("Some calculated offsets are 0, offsetting these to 1.", RuntimeWarning)
         offset[offset == 0] = 0  # TODO: this seems like a obvious typo in tradeSeq
+    if np.isnan(offset).any():
+        warnings.warn("Some calculated offsets are NaN, offsetting these to 1.", RuntimeWarning)
+        offset[np.isnan(offset)] = 1
     return offset
