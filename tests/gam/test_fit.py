@@ -45,7 +45,7 @@ class TestGAMFitting:
         gam.fit(n_knots=n_knots, n_jobs=n_jobs)
         n_predictions = 50
         lineage_assignment = np.zeros((n_predictions,), dtype=int)
-        pseudotime = np.linspace(0.0, 1, n_predictions)
+        pseudotime = np.linspace(0.0, 5, n_predictions)
         prediction = gam.predict(gene_id=0, lineage_assignment=lineage_assignment, pseudotimes=pseudotime)
         assert np.allclose(prediction, constant)
 
