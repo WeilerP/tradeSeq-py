@@ -1,6 +1,7 @@
 from typing import Union
 
 import numpy as np
+import pandas as pd
 
 from tradeseq.de_tests._base import WithinLineageTest
 
@@ -14,7 +15,7 @@ class StartVsEndTest(WithinLineageTest):
         end: Union[None, float, np.ndarray] = None,
         lineage_test: bool = False,
         global_test: bool = True,
-    ):
+    ) -> pd.DataFrame:
         """
         Perform StartVsEndTest.
 
