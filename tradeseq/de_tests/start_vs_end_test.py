@@ -10,8 +10,9 @@ class StartVsEndTest(WithinLineageTest):
 
     def __call__(
         self,
-        start: Union[None, float, np.ndarry] = None,
-        end: Union[None, float, np.ndarry] = None,
+        start: Union[None, float, np.ndarray] = None,
+        end: Union[None, float, np.ndarray] = None,
+        lineage_test: bool = False,
         global_test: bool = True,
     ):
         """
@@ -27,12 +28,15 @@ class StartVsEndTest(WithinLineageTest):
             End pseudotime value (that is compared against start).
             Can be a float (same end pseudotime value for every lineage), a (``n_lineages``,) np.ndarray (per lineage
             end pseudotime values) or None (then the maximum pseudotime value for every lineage is taken).
+        lineage_test
+            Boolean indicating whether a test should be performed per lineage (independent of other lineages).
         global_test
-            Boolean indicating wheter a global_test should be performed.
+            Boolean indicating whether a global_test should be performed (across all lineages).
 
         Returns
         -------
-        A pandas data frame containing the wald statistic, the degrees of freedom and the p value for each gene.
+        A pandas data frame containing the wald statistic, the degrees of freedom and the p value
+        for each gene for each lineage (if lineage_test) and/or globally.
         """
         pseudotimes_per_lineage = self._model._get_pseudotimes_per_lineage()
         if start is None:
@@ -41,8 +45,8 @@ class StartVsEndTest(WithinLineageTest):
             end = [pseudotimes.max() for pseudotimes in pseudotimes_per_lineage]
 
         n_lineages = self._model._n_lineages
-        pseudotimes_start = np.zeros(n_lineages) + start
-        pseudotimes_end = np.zeros(n_lineages) + end
+        pseudotimes_start = np.split(np.zeros(n_lineages) + start, n_lineages)
+        pseudotimes_end = np.split(np.zeros(n_lineages) + end, n_lineages)
         lineage_assignment = np.arange(n_lineages)
 
-        return self._test(pseudotimes_start, pseudotimes_end, lineage_assignment)
+        return self._test(pseudotimes_start, pseudotimes_end, lineage_assignment, lineage_test, global_test)
