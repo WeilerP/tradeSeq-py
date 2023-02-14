@@ -36,7 +36,7 @@ class WithinLineageTest(ABC):
         global_test: bool = True,
     ):
         """
-        Perform wald tests for all genes comparing the predictions for pseudotime_a with pseudotime_b given an assigment to lineages.
+        Perform Wald tests for all genes comparing the predictions for pseudotime_a with pseudotime_b given an assigment to lineages.
 
         Parameters
         ----------
@@ -49,7 +49,7 @@ class WithinLineageTest(ABC):
 
         Returns
         -------
-        A pandas data frame containing the wald statistic, the degrees of freedom and the p value for each gene.
+        A Pandas DataFrame containing the Wald statistic, the degrees of freedom and the p-value for each gene.
         """
         result = {}
         for gene_id, name in enumerate(self._model._genes):
@@ -89,9 +89,9 @@ class WithinLineageTest(ABC):
 def wald_test(
     prediction: np.ndarray, contrast: np.ndarray, sigma: np.ndarray, inverse: Literal["cholesky", "eigen"] = "eigen"
 ):
-    """Perform a wald test for the null hypothesis: contrast * fitted_parameters = 0.
+    """Perform a Wald test for the null hypothesis: contrast * fitted_parameters = 0.
 
-    Computes wald statistics: prediction (contrast sigma contrast^T)^(-1) prediction^T and the corresponding p value.
+    Computes Wald statistics: prediction (contrast sigma contrast^T)^(-1) prediction^T and the corresponding p-value.
 
     Parameter
     ---------
@@ -101,11 +101,11 @@ def wald_test(
         A (`n_prediction`, `n_params`) np.ndarray typically containing the difference between the lp matrices of the
         same predictions as above.
     sigma
-        A (`n_params`, `n_params`) np.ndarray, the covariance matrix for the fitted parameters.
+        The covariance matrix for the fitted parameters given as an (`n_params`, `n_params`) np.ndarray.
 
     Returns
     -------
-    A tuple containing the wald statistic, the degrees of freedom and the p value.
+    A tuple containing the Wald statistic, the degrees of freedom and the p value.
     """
     sigma_inv = np.linalg.pinv(contrast @ sigma @ contrast.T)
     wald = prediction @ sigma_inv @ prediction.T

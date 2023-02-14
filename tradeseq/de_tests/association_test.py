@@ -35,8 +35,8 @@ class AssociationTest(WithinLineageTest):
 
         Returns
         -------
-        A pandas data frame containing the wald statistic, the degrees of freedom and the p value
-        for each gene for each lineage (if lineage_test) and/or globally.
+        A Pandas DataFrame containing the Wald statistic, the degrees of freedom and the p-value
+        for each gene for each lineage (if ``lineage_test=True``) and/or globally.
         """
         pseudotimes_per_lineage = self._model._get_pseudotimes_per_lineage()
         start = [pseudotimes.min() for pseudotimes in pseudotimes_per_lineage]
