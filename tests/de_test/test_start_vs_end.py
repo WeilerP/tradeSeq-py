@@ -13,7 +13,7 @@ class TestStartVsEnd:
         constant=st.integers(min_value=0, max_value=10),
         n_knots=st.integers(min_value=2, max_value=4),
     )
-    @settings(max_examples=1, deadline=50000)
+    @settings(max_examples=10, deadline=50000)
     def test_constant(self, gam: GAM, constant: int, n_knots: int):
         gam._adata.X = np.zeros((gam._adata.n_obs, gam._adata.n_vars), dtype=int) + constant
         gam._adata.obs[gam._time_key] = np.linspace(0, 5, gam._adata.n_obs)
@@ -42,6 +42,6 @@ class TestStartVsEnd:
         gam._offset_key = "offset"
         gam.fit(n_knots=n_knots)
 
-        result = StartVsEndTest(gam)(0, 5, global_test=True)
+        result = StartVsEndTest(gam)(0, 5, global_test=True, lineage_test=True)
 
         assert np.allclose(result["p value"], 0)
