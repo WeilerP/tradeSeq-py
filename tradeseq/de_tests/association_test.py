@@ -27,7 +27,7 @@ class AssociationTest(WithinLineageTest):
                 Compare equally spaced pseudotimes between start and end of the lineage all to the start pseudotime of the lineage.
             * consecutive:
                 Compare all pairs of consecutive timepoints in the list of equally spaced pseudotimes between start and end of a lineage.
-                Not recommend as the differences can be very small.
+                Not recommended as the differences can be very small.
         lineage_test
             Boolean indicating whether a test should be performed per lineage (independent of other lineages).
         global_test
