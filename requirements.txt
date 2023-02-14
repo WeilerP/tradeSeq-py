@@ -1,7 +1,7 @@
 matplotlib
 # TODO(michalk8): pin from below
 numpy
-pandas
+pandas>=1.4.0
 anndata
 rpy2
 scipy
