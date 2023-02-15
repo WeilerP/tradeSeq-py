@@ -43,11 +43,10 @@ class StartVsEndTest(WithinLineageTest):
         A Pandas DataFrame containing the Wald statistic, the degrees of freedom and the p-value
         for each gene for each lineage (if ``lineage_test=True``) and/or globally.
         """
-        pseudotimes_per_lineage = self._model._get_pseudotimes_per_lineage()
         if start is None:
-            start = [pseudotimes.min() for pseudotimes in pseudotimes_per_lineage]
+            start = self._get_start_pseudotime()
         if end is None:
-            end = [pseudotimes.max() for pseudotimes in pseudotimes_per_lineage]
+            end = self._get_end_pseudotime()
 
         n_lineages = self._model._n_lineages
         pseudotimes_start = np.split(np.zeros(n_lineages) + start, n_lineages)

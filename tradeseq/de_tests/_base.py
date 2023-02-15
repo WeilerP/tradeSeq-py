@@ -27,6 +27,28 @@ class WithinLineageTest(ABC):
     def __call__(self, **kwargs):
         """Perform the WithinLineageTest."""
 
+    def _get_start_pseudotime(self) -> List[float]:
+        """
+        Get pseudotime values for the start of every lineage.
+
+        Returns
+        -------
+        A list containing the minimum pseudotime for every lineage.
+        """
+        pseudotimes_per_lineage = self._model._get_pseudotimes_per_lineage()
+        return [pseudotimes.min() for pseudotimes in pseudotimes_per_lineage]
+
+    def _get_end_pseudotime(self) -> List[float]:
+        """
+        Get pseudotime values for the end of every lineage.
+
+        Returns
+        -------
+        A list containing the maximum pseudotime for every lineage.
+        """
+        pseudotimes_per_lineage = self._model._get_pseudotimes_per_lineage()
+        return [pseudotimes.max() for pseudotimes in pseudotimes_per_lineage]
+
     def _test(
         self,
         pseudotimes_a: List[np.ndarray],
