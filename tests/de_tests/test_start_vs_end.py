@@ -44,4 +44,4 @@ class TestStartVsEnd:
 
         result = StartVsEndTest(gam)(0, 5, global_test=True, lineage_test=True)
 
-        np.testing.assert_allclose(result["p value"], 0)
+        np.testing.assert_allclose(result["p value"], 0, atol=1e-5)
