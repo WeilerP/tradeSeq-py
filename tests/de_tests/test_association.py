@@ -6,7 +6,7 @@ import numpy as np
 
 from tradeseq.gam import GAM
 from tests.core.test_base import get_gam
-from tradeseq.de_tests.association_test import AssociationTest
+from tradeseq.de_tests._association_test import AssociationTest
 
 
 class TestAssociation:
@@ -31,7 +31,7 @@ class TestAssociation:
             n_points=n_knots * 2, contrast_type=contrast_type, lineage_test=True, global_test=True
         )
 
-        assert np.allclose(result["p value"], 1)
+        np.testing.assert_allclose(result["p value"], 1)
 
     @given(
         gam=get_gam(n_vars=2, min_obs=60, max_obs=100, n_lineages=2),
@@ -56,4 +56,4 @@ class TestAssociation:
             n_points=n_knots * 2, contrast_type=contrast_type, lineage_test=True, global_test=True
         )
 
-        assert np.allclose(result["p value"], 0, atol=1e-5)
+        np.testing.assert_allclose(result["p value"], 0, atol=1e-5)

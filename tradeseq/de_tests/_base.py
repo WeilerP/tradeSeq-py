@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import List, Union, Literal
+from typing import List, Union
 
 from scipy.stats import chi2
 
@@ -46,13 +46,18 @@ class WithinLineageTest(ABC):
             A list of ``len(lineages)`` many np.ndarray of shape (``n_predictions``,) specifying pseudotime values per tested lineage.
         lineages
             A np.ndarray or list of integers specifying the lineage indices for which tests should be performed.
+        lineage_test
+            Boolean indicating whether a test should be performed per lineage (independent of other lineages).
+        global_test
+            Boolean indicating whether a global_test should be performed (across all lineages).
 
         Returns
         -------
         A Pandas DataFrame containing the Wald statistic, the degrees of freedom and the p-value for each gene.
         """
         result = {}
-        for gene_id, name in enumerate(self._model._genes):
+        for gene_id, gene_name in enumerate(self._model._genes):
+            # TODO: parallelize
             predictions = []
             lpmatrices = []
             sigma = self._model.get_covariance(gene_id)
@@ -72,23 +77,22 @@ class WithinLineageTest(ABC):
 
                 if lineage_test:
                     lineage_name = self._model.lineage_names[lineage]
-                    result[f"{name} in lineage {lineage_name}"] = wald_test(
+                    result[f"{gene_name} in lineage {lineage_name}"] = _wald_test(
                         pred_a - pred_b, lpmatrix_a - lpmatrix_b, sigma
                     )
 
             if global_test:
                 pred = np.concatenate(predictions)
                 lpmatrix = np.concatenate(lpmatrices, axis=0)
-                result[f"{name} globally"] = wald_test(pred, lpmatrix, sigma)
+                result[f"{gene_name} globally"] = _wald_test(pred, lpmatrix, sigma)
 
         return pd.DataFrame.from_dict(
             result, orient="index", columns=["wald statistic", "degrees of freedom", "p value"]
         )
 
 
-def wald_test(
-    prediction: np.ndarray, contrast: np.ndarray, sigma: np.ndarray, inverse: Literal["cholesky", "eigen"] = "eigen"
-):
+# TODO: add different methods to compute the inverse
+def _wald_test(prediction: np.ndarray, contrast: np.ndarray, sigma: np.ndarray):
     """Perform a Wald test for the null hypothesis: contrast * fitted_parameters = 0.
 
     Computes Wald statistics: prediction (contrast sigma contrast^T)^(-1) prediction^T and the corresponding p-value.
@@ -98,7 +102,7 @@ def wald_test(
     prediction
         A (`n_prediction`,) np.ndarray typically containing the difference between two predictions.
     contrast
-        A (`n_prediction`, `n_params`) np.ndarray typically containing the difference between the lp matrices of the
+        A (`n_prediction`, `n_params`) np.ndarray typically containing the difference between the linear predictor matrices of the
         same predictions as above.
     sigma
         The covariance matrix for the fitted parameters given as an (`n_params`, `n_params`) np.ndarray.

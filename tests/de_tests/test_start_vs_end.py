@@ -4,7 +4,7 @@ import numpy as np
 
 from tradeseq.gam import GAM
 from tests.core.test_base import get_gam
-from tradeseq.de_tests.start_vs_end_test import StartVsEndTest
+from tradeseq.de_tests._start_vs_end_test import StartVsEndTest
 
 
 class TestStartVsEnd:
@@ -24,7 +24,7 @@ class TestStartVsEnd:
 
         result = StartVsEndTest(gam)(0, 5, global_test=True, lineage_test=True)
 
-        assert np.allclose(result["p value"], 1)
+        np.testing.assert_allclose(result["p value"], 1)
 
     @given(
         gam=get_gam(n_vars=2, min_obs=60, max_obs=100, n_lineages=2),
@@ -44,4 +44,4 @@ class TestStartVsEnd:
 
         result = StartVsEndTest(gam)(0, 5, global_test=True, lineage_test=True)
 
-        assert np.allclose(result["p value"], 0)
+        np.testing.assert_allclose(result["p value"], 0)
