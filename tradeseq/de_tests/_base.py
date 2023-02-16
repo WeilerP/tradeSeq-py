@@ -160,19 +160,28 @@ class BetweenLineageTest(DifferentialExpressionTest):
                 predictions.append(self._model.predict(gene_id, lineage_array, pseudotime, log_scale=True))
                 lpmatrices.append(self._model.get_lpmatrix(gene_id, lineage_array, pseudotime))
 
+            predictions_comb = [
+                predictions[lineage_a] - predictions[lineage_b] for (lineage_a, lineage_b) in combinations(lineages, 2)
+            ]
+            lpmatrices_comb = [
+                lpmatrices[lineage_a] - lpmatrices[lineage_b] for (lineage_a, lineage_b) in combinations(lineages, 2)
+            ]
+
             if pairwise_test:
-                for (lineage_a, lineage_b) in combinations(lineages, 2):
+                for prediction_diff, lpmatrix_diff, (lineage_a, lineage_b) in zip(
+                    predictions_comb, lpmatrices_comb, combinations(lineages, 2)
+                ):
                     result[
                         f"{gene_name} between lineages {self._model.lineage_names[lineage_a]} and {self._model.lineage_names[lineage_b]}"
                     ] = _wald_test(
-                        predictions[lineage_a] - predictions[lineage_b],
-                        lpmatrices[lineage_a] - lpmatrices[lineage_b],
+                        prediction_diff,
+                        lpmatrix_diff,
                         sigma,
                     )
 
             if global_test:
-                pred = np.concatenate(predictions)
-                lpmatrix = np.concatenate(lpmatrices, axis=0)
+                pred = np.concatenate(predictions_comb)
+                lpmatrix = np.concatenate(lpmatrices_comb, axis=0)
                 result[f"{gene_name} globally"] = _wald_test(pred, lpmatrix, sigma)
 
         return pd.DataFrame.from_dict(

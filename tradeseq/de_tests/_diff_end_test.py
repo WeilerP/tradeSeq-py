@@ -6,7 +6,7 @@ from tradeseq.de_tests._base import BetweenLineageTest
 class DiffEndTest(BetweenLineageTest):
     """The DiffEndTest checks whether a gene is expressed differently at the end of two lineages."""
 
-    def __call__(self, pairwise_test, global_test):
+    def __call__(self, pairwise_test: bool, global_test: bool):
         """
         Perform DiffEndTest.
 
@@ -22,7 +22,7 @@ class DiffEndTest(BetweenLineageTest):
         A Pandas DataFrame containing the Wald statistic, the degrees of freedom and the p-value
         for each gene for each pair of lineages (if ``pairwise_test``) and/or globally (if ``global_test``).
         """
-        end_pseudotimes = [np.ndarry([end]) for end in self._get_end_pseudotime()]
+        end_pseudotimes = [np.array([end]) for end in self._get_end_pseudotime()]
         lineages = np.arange(self._model._n_lineages)
 
         return self._test(end_pseudotimes, lineages, pairwise_test, global_test)
