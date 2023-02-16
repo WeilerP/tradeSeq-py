@@ -1,5 +1,6 @@
 from abc import ABC, abstractmethod
 from typing import List, Union
+from itertools import combinations
 
 from scipy.stats import chi2
 
@@ -9,8 +10,8 @@ import pandas as pd
 from tradeseq.gam import GAM
 
 
-class WithinLineageTest(ABC):
-    """Abstract base class for a within lineage differential expression test."""
+class DifferentialExpressionTest(ABC):
+    """Abstract base class for a DifferntialExpressionTest"""
 
     def __init__(self, model: GAM):
         """
@@ -25,7 +26,7 @@ class WithinLineageTest(ABC):
 
     @abstractmethod
     def __call__(self, **kwargs):
-        """Perform the WithinLineageTest."""
+        """Perform the DifferntialExpressionTest."""
 
     def _get_start_pseudotime(self) -> List[float]:
         """
@@ -49,6 +50,10 @@ class WithinLineageTest(ABC):
         pseudotimes_per_lineage = self._model._get_pseudotimes_per_lineage()
         return [pseudotimes.max() for pseudotimes in pseudotimes_per_lineage]
 
+
+class WithinLineageTest(DifferentialExpressionTest):
+    """Abstract class for a within lineage differential expression test."""
+
     def _test(
         self,
         pseudotimes_a: List[np.ndarray],
@@ -62,9 +67,9 @@ class WithinLineageTest(ABC):
 
         Parameters
         ----------
-        pseudotime_a
+        pseudotimes_a
             A list of ``len(lineages)`` many np.ndarray of shape (``n_predictions``,) specifying pseudotime values per tested lineage.
-        pseudotime_b
+        pseudotimes_b
             A list of ``len(lineages)`` many np.ndarray of shape (``n_predictions``,) specifying pseudotime values per tested lineage.
         lineages
             A np.ndarray or list of integers specifying the lineage indices for which tests should be performed.
@@ -75,7 +80,8 @@ class WithinLineageTest(ABC):
 
         Returns
         -------
-        A Pandas DataFrame containing the Wald statistic, the degrees of freedom and the p-value for each gene.
+        A Pandas DataFrame containing the Wald statistic, the degrees of freedom and the p-value
+        for each gene for each lineage (if ``lineage_test=True``) and/or globally.
         """
         result = {}
         for gene_id, gene_name in enumerate(self._model._genes):
@@ -101,6 +107,67 @@ class WithinLineageTest(ABC):
                     lineage_name = self._model.lineage_names[lineage]
                     result[f"{gene_name} in lineage {lineage_name}"] = _wald_test(
                         pred_a - pred_b, lpmatrix_a - lpmatrix_b, sigma
+                    )
+
+            if global_test:
+                pred = np.concatenate(predictions)
+                lpmatrix = np.concatenate(lpmatrices, axis=0)
+                result[f"{gene_name} globally"] = _wald_test(pred, lpmatrix, sigma)
+
+        return pd.DataFrame.from_dict(
+            result, orient="index", columns=["wald statistic", "degrees of freedom", "p value"]
+        )
+
+
+class BetweenLineageTest(DifferentialExpressionTest):
+    """Abstract class for a between lineage differential expression test."""
+
+    def _test(
+        self,
+        pseudotimes: List[np.ndarray],
+        lineages: Union[List[int], np.ndarray[int]],
+        pairwise_test: bool = False,
+        global_test: bool = True,
+    ):
+        """
+        Perform Wald tests for all genes comparing the predictions for the given pseudotimes between the lineages.
+
+        Parameters
+        ----------
+        pseudotimes
+            A list of ``len(lineages)`` many np.ndarray of shape (``n_predictions``,) specifying pseudotime values per tested lineage.
+        lineages
+            A np.ndarray or list of integers specifying the lineage indices for which tests should be performed.
+        pairwise_test
+            Boolean indicating whether a test should be performed for all pairs of lineages (independent of other lineages).
+        global_test
+            Boolean indicating whether a global_test should be performed (across all lineages).
+
+        Returns
+        -------
+        A Pandas DataFrame containing the Wald statistic, the degrees of freedom and the p-value
+        for each gene for each pair of lineages (if ``pairwise_test``) and/or globally (if ``global_test``).
+        """
+        result = {}
+        for gene_id, gene_name in enumerate(self._model._genes):
+            predictions = []
+            lpmatrices = []
+            sigma = self._model.get_covariance(gene_id)
+
+            for pseudotime, lineage in zip(pseudotimes, lineages):
+                lineage_array = np.repeat(lineage, len(pseudotime))
+
+                predictions.append(self._model.predict(gene_id, lineage_array, pseudotime, log_scale=True))
+                lpmatrices.append(self._model.get_lpmatrix(gene_id, lineage_array, pseudotime))
+
+            if pairwise_test:
+                for (lineage_a, lineage_b) in combinations(lineages, 2):
+                    result[
+                        f"{gene_name} between lineages {self._model.lineage_names[lineage_a]} and {self._model.lineage_names[lineage_b]}"
+                    ] = _wald_test(
+                        predictions[lineage_a] - predictions[lineage_b],
+                        lpmatrices[lineage_a] - lpmatrices[lineage_b],
+                        sigma,
                     )
 
             if global_test:
