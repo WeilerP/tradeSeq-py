@@ -49,6 +49,7 @@ class WithinLineageTest(ABC):
         pseudotimes_per_lineage = self._model._get_pseudotimes_per_lineage()
         return [pseudotimes.max() for pseudotimes in pseudotimes_per_lineage]
 
+    # TODO: parallelize
     def _test(
         self,
         pseudotimes_a: List[np.ndarray],
@@ -79,7 +80,6 @@ class WithinLineageTest(ABC):
         """
         result = {}
         for gene_id, gene_name in enumerate(self._model._genes):
-            # TODO: parallelize
             predictions = []
             lpmatrices = []
             sigma = self._model.get_covariance(gene_id)
