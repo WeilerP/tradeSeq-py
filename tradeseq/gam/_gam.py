@@ -57,7 +57,7 @@ class GAM:
         self._model: Optional[List[_backend.GAM]] = None
         self._genes: List[str] = None
 
-        self._lineage_names: Optional[List[str]] = None
+        self.lineage_names: Optional[List[str]] = None
 
         self._knots: Optional[np.ndarray] = None
 
@@ -479,7 +479,7 @@ class GAM:
             Number of jobs that are used for fitting. If n_jobs > 2, the R library biocParallel is used for fitting the
             GAMs in parallel.
         """
-        self._lineage_assignment, self._lineage_names = self._assign_cells_to_lineages()
+        self._lineage_assignment, self.lineage_names = self._assign_cells_to_lineages()
         n_lineages = self._lineage_assignment.shape[1]
         self._knots = self._get_knots(n_knots)
         pseudotimes = self._get_pseudotime()
