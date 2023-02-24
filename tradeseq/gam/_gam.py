@@ -228,7 +228,7 @@ class GAM:
         for times, counts, id in zip(times_pred, counts_pred, lineage_id):
             if log_scale:
                 counts = np.log1p(counts)
-            plt.plot(times, counts, label=f"lineage {self._lineage_names[id]}")
+            plt.plot(times, counts, label=f"lineage {self.lineage_names[id]}")
 
         # Plot knot locations
         if knot_locations:
