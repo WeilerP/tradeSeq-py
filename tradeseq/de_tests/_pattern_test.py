@@ -56,6 +56,7 @@ class PatternTest(BetweenLineageTest):
             end_times = np.zeros((n_lineages,)) + end_times
 
         pseudotimes = np.split(np.linspace(start_times, end_times, num=n_points, axis=1), n_lineages)
+        pseudotimes = [pseudotime.flatten() for pseudotime in pseudotimes]
         lineage_assigment = np.arange(0, n_lineages)
 
         return self._test(pseudotimes, lineage_assigment, pairwise_test, global_test)
