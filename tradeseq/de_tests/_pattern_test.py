@@ -16,8 +16,7 @@ class PatternTest(BetweenLineageTest):
         pairwise_test: bool = False,
         global_test: bool = True,
     ):
-        """
-        Perform generalized PatternTest.
+        """Perform generalized PatternTest.
 
         Corresponds to the ``PatternTest`` in tradeseq for ``start_times=None`` and ``end_times=None``.
         Corresponds to the ``earlyDeTest`` in tradeseq if ``start_time`` and ``end_time`` are given as a float (in
@@ -59,7 +58,9 @@ class PatternTest(BetweenLineageTest):
         if isinstance(end_times, float):
             end_times = np.zeros((n_lineages,)) + end_times
 
-        pseudotimes = np.split(np.linspace(start_times, end_times, num=n_points, axis=1), n_lineages)
+        pseudotimes = np.split(
+            np.linspace(start_times, end_times, num=n_points, axis=1), n_lineages
+        )
         pseudotimes = [pseudotime.flatten() for pseudotime in pseudotimes]
         lineage_assigment = np.arange(0, n_lineages)
 

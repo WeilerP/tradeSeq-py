@@ -1,11 +1,11 @@
-from hypothesis import given, settings, strategies as st
 import anndata as ad
-
 import numpy as np
+from hypothesis import given, settings
+from hypothesis import strategies as st
 
-from tradeseq.gam._gam import GAM, _calculate_offset
 from tests.core.test_base import get_gam
 from tests.core.tradeseq_r import TradeseqR
+from tradeseq.gam._gam import GAM, _calculate_offset
 
 
 class TestGAMFitting:
@@ -25,7 +25,9 @@ class TestGAMFitting:
         knots_tradeseq = tradeseq.get_knots()
         offset_tradeseq = tradeseq.get_offset()
         assert np.allclose(knots, knots_tradeseq)
-        assert np.allclose(offset, offset_tradeseq, rtol=0.1)  # There is a small difference between the offsets...
+        assert np.allclose(
+            offset, offset_tradeseq, rtol=0.1
+        )  # There is a small difference between the offsets...
 
         # TODO: compare predictions with tradeseq
 
@@ -37,7 +39,9 @@ class TestGAMFitting:
     )
     @settings(max_examples=10, deadline=50000)
     def test_constant(self, gam: GAM, constant: int, n_knots: int, n_jobs: int):
-        gam._adata.X = np.zeros((gam._adata.n_obs, gam._adata.n_vars), dtype=int) + constant
+        gam._adata.X = (
+            np.zeros((gam._adata.n_obs, gam._adata.n_vars), dtype=int) + constant
+        )
         gam._adata.obs[gam._time_key] = np.linspace(0, 5, gam._adata.n_obs)
         del gam._adata.obsm[gam._time_key]
         weights = np.ones((gam._adata.n_obs, gam._n_lineages))
@@ -46,7 +50,9 @@ class TestGAMFitting:
         n_predictions = 50
         lineage_assignment = np.zeros((n_predictions,), dtype=int)
         pseudotime = np.linspace(0.0, 5, n_predictions)
-        prediction = gam.predict(gene_id=0, lineage_assignment=lineage_assignment, pseudotimes=pseudotime)
+        prediction = gam.predict(
+            gene_id=0, lineage_assignment=lineage_assignment, pseudotimes=pseudotime
+        )
         assert np.allclose(prediction, constant)
 
     @given(
@@ -56,7 +62,13 @@ class TestGAMFitting:
     @settings(max_examples=10, deadline=50000)
     def test_linear(self, gam: GAM, n_knots: int):
         # TODO: scale different features by factor
-        gam._adata.X = np.exp(np.repeat(np.linspace(1, 5, gam._adata.n_obs)[:, np.newaxis], gam._adata.n_vars, axis=1))
+        gam._adata.X = np.exp(
+            np.repeat(
+                np.linspace(1, 5, gam._adata.n_obs)[:, np.newaxis],
+                gam._adata.n_vars,
+                axis=1,
+            )
+        )
         gam._adata.obs[gam._time_key] = np.linspace(1, 5, gam._adata.n_obs)
         del gam._adata.obsm[gam._time_key]
         weights = np.ones((gam._adata.n_obs, gam._n_lineages))
@@ -69,6 +81,9 @@ class TestGAMFitting:
         lineage_assignment = np.zeros((n_predictions,), dtype=int)
         pseudotime = np.linspace(1.0, 2, n_predictions)
         prediction = gam.predict(
-            gene_id=0, lineage_assignment=lineage_assignment, pseudotimes=pseudotime, log_scale=True
+            gene_id=0,
+            lineage_assignment=lineage_assignment,
+            pseudotimes=pseudotime,
+            log_scale=True,
         )
         assert np.allclose(prediction, pseudotime)

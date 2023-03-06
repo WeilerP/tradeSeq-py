@@ -1,24 +1,23 @@
 from abc import ABC, abstractmethod
 from typing import (
-    Any,
-    Dict,
-    Type,
-    Tuple,
-    Union,
-    Literal,
-    Callable,
-    Optional,
     TYPE_CHECKING,
+    Any,
+    Callable,
+    Dict,
+    Literal,
+    Optional,
+    Tuple,
+    Type,
+    Union,
 )
 
-from rpy2.robjects import pandas2ri
-from packaging.version import parse, Version, LegacyVersion
-from rpy2.robjects.packages import importr, InstalledSTPackage, PackageNotInstalledError
-from rpy2.robjects.conversion import localconverter
-from rpy2.rinterface_lib.embedded import RRuntimeError
-import rpy2.robjects as ro
-
 import pandas as pd
+import rpy2.robjects as ro
+from packaging.version import LegacyVersion, Version, parse
+from rpy2.rinterface_lib.embedded import RRuntimeError
+from rpy2.robjects import pandas2ri
+from rpy2.robjects.conversion import localconverter
+from rpy2.robjects.packages import InstalledSTPackage, PackageNotInstalledError, importr
 
 __all__ = ("TradeSeqTest", "register")
 
@@ -54,7 +53,9 @@ class TradeSeqTest(ABC):
         """TODO."""
         clazz = cls._REGISTRY.get(name, None)
         if clazz is None:
-            raise ValueError(f"TODO: invalid test `{name}`, valid are {sorted(cls._REGISTRY.keys())}")
+            raise ValueError(
+                f"TODO: invalid test `{name}`, valid are {sorted(cls._REGISTRY.keys())}"
+            )
 
         return clazz(model)
 
@@ -73,7 +74,9 @@ def register(key: str) -> Callable[[Type[TradeSeqTest]], Type[TradeSeqTest]]:
 
 
 # TODO: Add docstrings
-def _load_library(*, force_reload: bool = False) -> Tuple[InstalledSTPackage, Union[Version, LegacyVersion]]:
+def _load_library(
+    *, force_reload: bool = False
+) -> Tuple[InstalledSTPackage, Union[Version, LegacyVersion]]:
     """TODO."""
     global _LIBRARY, _VERSION
 

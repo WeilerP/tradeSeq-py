@@ -20,8 +20,7 @@ class StartVsEndTest(WithinLineageTest):
         lineage_test: bool = False,
         global_test: bool = True,
     ) -> pd.DataFrame:
-        """
-        Perform StartVsEndTest.
+        """Perform StartVsEndTest.
 
         Parameters
         ----------
@@ -53,4 +52,10 @@ class StartVsEndTest(WithinLineageTest):
         pseudotimes_end = np.split(np.zeros(n_lineages) + end, n_lineages)
         lineage_assignment = np.arange(n_lineages)
 
-        return self._test(pseudotimes_start, pseudotimes_end, lineage_assignment, lineage_test, global_test)
+        return self._test(
+            pseudotimes_start,
+            pseudotimes_end,
+            lineage_assignment,
+            lineage_test,
+            global_test,
+        )

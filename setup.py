@@ -1,9 +1,9 @@
 from pathlib import Path
 
-from setuptools import setup, find_packages
+from setuptools import find_packages, setup
 
 try:
-    from tradeseq import __email__, __author__, __version__, __maintainer__
+    from tradeseq import __author__, __email__, __maintainer__, __version__
 except ImportError:
     __author__ = ""
     __maintainer__ = "Michal Klein"
@@ -57,5 +57,7 @@ setup(
         "Topic :: Scientific/Engineering :: Visualization",
     ],
     # TODO(michalk8): populate
-    keywords=sorted(["single-cell", "bio-informatics", "lineage", "differential expression"]),
+    keywords=sorted(
+        ["single-cell", "bio-informatics", "lineage", "differential expression"]
+    ),
 )

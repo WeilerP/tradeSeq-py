@@ -1,14 +1,12 @@
-from typing import List, Tuple, Union, Optional
 import warnings
-
-from conorm import tmm_norm_factors
-from anndata import AnnData
-from scipy.sparse import issparse
-
-import numpy as np
-import pandas as pd
+from typing import List, Optional, Tuple, Union
 
 import matplotlib.pyplot as plt
+import numpy as np
+import pandas as pd
+from anndata import AnnData
+from conorm import tmm_norm_factors
+from scipy.sparse import issparse
 
 from tradeseq.gam import _backend
 
@@ -62,7 +60,9 @@ class GAM:
         self._knots: Optional[np.ndarray] = None
 
         self._lineage_assignment: Optional[np.ndarray] = None
-        self._offset: Optional[np.ndarray] = None  # TODO: Not sure if necessary or sufficient to just save average
+        self._offset: Optional[
+            np.ndarray
+        ] = None  # TODO: Not sure if necessary or sufficient to just save average
 
         self._time_key = time_key
         self._weights_key = weights_key
@@ -71,7 +71,11 @@ class GAM:
 
     # TODO: change so that list of gene_ids or gene_names are accepted
     def predict(
-        self, gene_id: int, lineage_assignment: np.ndarray, pseudotimes: np.ndarray, log_scale: bool = False
+        self,
+        gene_id: int,
+        lineage_assignment: np.ndarray,
+        pseudotimes: np.ndarray,
+        log_scale: bool = False,
     ) -> np.ndarray:
         """Predict gene count for new data according to fitted GAM.
 
@@ -92,7 +96,10 @@ class GAM:
         """
         self.check_is_fitted()
 
-        if lineage_assignment.shape != pseudotimes.shape or lineage_assignment.ndim != 1:
+        if (
+            lineage_assignment.shape != pseudotimes.shape
+            or lineage_assignment.ndim != 1
+        ):
             raise ValueError(
                 "The arguments lineage_assignment and pseudotimes should have the same length and have to "
                 "be one dimensional."
@@ -101,7 +108,9 @@ class GAM:
         n_predictions = lineage_assignment.shape[0]
 
         pseudotimes = np.repeat(pseudotimes[:, np.newaxis], self._n_lineages, axis=1)
-        lineage_indicator = _indices_to_indicator_matrix(lineage_assignment, self._n_lineages)
+        lineage_indicator = _indices_to_indicator_matrix(
+            lineage_assignment, self._n_lineages
+        )
 
         # offsets are just mean offsets of fitted data
         offsets = np.repeat(self._offset.mean(), n_predictions)
@@ -111,11 +120,14 @@ class GAM:
         else:
             return_type = "response"
 
-        return self._model[gene_id].predict(lineage_indicator, pseudotimes, offsets, return_type)
+        return self._model[gene_id].predict(
+            lineage_indicator, pseudotimes, offsets, return_type
+        )
 
-    def get_lpmatrix(self, gene_id: int, lineage_assignment: np.ndarray, pseudotimes: np.ndarray) -> np.ndarray:
-        """
-        Return linear predictor matrix of the GAM for the given gene with the given parameters.
+    def get_lpmatrix(
+        self, gene_id: int, lineage_assignment: np.ndarray, pseudotimes: np.ndarray
+    ) -> np.ndarray:
+        """Return linear predictor matrix of the GAM for the given gene with the given parameters.
 
         Parameters
         ----------
@@ -132,7 +144,10 @@ class GAM:
         """
         self.check_is_fitted()
 
-        if lineage_assignment.shape != pseudotimes.shape or lineage_assignment.ndim != 1:
+        if (
+            lineage_assignment.shape != pseudotimes.shape
+            or lineage_assignment.ndim != 1
+        ):
             raise ValueError(
                 "The arguments lineage_assignment and pseudotimes should have the same length and have to "
                 "be one dimensional."
@@ -141,16 +156,19 @@ class GAM:
         n_predictions = lineage_assignment.shape[0]
 
         pseudotimes = np.repeat(pseudotimes[:, np.newaxis], self._n_lineages, axis=1)
-        lineage_indicator = _indices_to_indicator_matrix(lineage_assignment, self._n_lineages)
+        lineage_indicator = _indices_to_indicator_matrix(
+            lineage_assignment, self._n_lineages
+        )
 
         # offsets are just mean offsets of fitted data
         offsets = np.repeat(self._offset.mean(), n_predictions)
 
-        return self._model[gene_id].predict(lineage_indicator, pseudotimes, offsets, "lpmatrix")
+        return self._model[gene_id].predict(
+            lineage_indicator, pseudotimes, offsets, "lpmatrix"
+        )
 
     def get_covariance(self, gene_id: int) -> np.ndarray:
-        """
-        Return covariance matrix of the parameters fitted for the GAM for the given gene.
+        """Return covariance matrix of the parameters fitted for the GAM for the given gene.
 
         Parameters
         ----------
@@ -211,14 +229,18 @@ class GAM:
         times_pred = []
         counts_pred = []
         for id in lineage_id:
-            equally_spaced = np.linspace(times_fitted[id].min(), times_fitted[id].max(), resolution)
+            equally_spaced = np.linspace(
+                times_fitted[id].min(), times_fitted[id].max(), resolution
+            )
             times_pred.append(equally_spaced)
 
             lineage_pred = (
                 np.zeros(resolution, dtype=int) + id
             )  # assign every predciton point to lineage with lineage id: id
 
-            counts_pred.append(self.predict(gene_id, lineage_pred, equally_spaced, log_scale=False))
+            counts_pred.append(
+                self.predict(gene_id, lineage_pred, equally_spaced, log_scale=False)
+            )
 
         for times, counts in zip(times_fitted, counts_fitted):
             if log_scale:
@@ -232,10 +254,17 @@ class GAM:
 
         # Plot knot locations
         if knot_locations:
-            y_max = max([max([pred.max() for pred in counts_pred]), max([fitted.max() for fitted in counts_fitted])])
+            y_max = max(
+                [
+                    max([pred.max() for pred in counts_pred]),
+                    max([fitted.max() for fitted in counts_fitted]),
+                ]
+            )
             if log_scale:
                 y_max = np.log1p(y_max)
-            plt.vlines(self._knots, 0, y_max, linestyle="dashed", colors="k", linewidth=0.5)
+            plt.vlines(
+                self._knots, 0, y_max, linestyle="dashed", colors="k", linewidth=0.5
+            )
         plt.ylabel(y_label)
         plt.xlabel(x_label)
 
@@ -251,7 +280,7 @@ class GAM:
         """Retrieve pseudotime from ``self._adata``.
 
         Returns
-        --------
+        -------
         Array of shape (``self._adata.n_obs``, ``n_lineages``) containing pseudotime values for all lineages.
         """
         time_key = self._time_key
@@ -331,7 +360,9 @@ class GAM:
         pseudotimes = self._get_pseudotime()
         # only consider pseudotimes of the lineage the cell is assigned to
         lineage_pseudotimes = [
-            pseudotimes[self._lineage_assignment[:, lineage_id].astype(bool), lineage_id]
+            pseudotimes[
+                self._lineage_assignment[:, lineage_id].astype(bool), lineage_id
+            ]
             for lineage_id in range(self._n_lineages)
         ]
         return lineage_pseudotimes
@@ -377,7 +408,9 @@ class GAM:
         def get_closest_knot(end_point):
             return np.argmin(np.abs(knots - end_point))
 
-        replace_ids = np.array([get_closest_knot(end_point) for end_point in end_points])
+        replace_ids = np.array(
+            [get_closest_knot(end_point) for end_point in end_points]
+        )
         if np.unique(replace_ids).size < np.unique(end_points).size:
             warnings.warn(
                 "Impossible to place a knot at all endpoints. Increase the number of knots to avoid this issue.",
@@ -439,7 +472,9 @@ class GAM:
         elif layer_key in self._adata.layers:
             counts = data.layers[layer_key]
         else:
-            raise KeyError(f"Impossible to find counts. No layer with key {layer_key} exists.")
+            raise KeyError(
+                f"Impossible to find counts. No layer with key {layer_key} exists."
+            )
 
         # TODO(michalk): warn of too many genes
         return (counts.A if issparse(counts) else counts), genes
@@ -492,18 +527,29 @@ class GAM:
         else:
             self._offset = self._get_offset()
 
-        right_side = "+".join([f"s(t{i}, by=l{i}, bs='cr', id=1, k=n_knots)" for i in range(1, n_lineages + 1)])
+        right_side = "+".join(
+            [
+                f"s(t{i}, by=l{i}, bs='cr', id=1, k=n_knots)"
+                for i in range(1, n_lineages + 1)
+            ]
+        )
         right_side += "+ offset(offset)"
         smooth_form = "y ~ " + right_side
 
         self._model = _backend.fit(
-            counts, pseudotimes, self._lineage_assignment, self._offset, self._knots, smooth_form, family, n_jobs
+            counts,
+            pseudotimes,
+            self._lineage_assignment,
+            self._offset,
+            self._knots,
+            smooth_form,
+            family,
+            n_jobs,
         )
 
 
 def _indices_to_indicator_matrix(indices: np.ndarray, n_indices: int):
-    """
-    Compute indicator matrice from indices.
+    """Compute indicator matrice from indices.
 
     Parameter
     ---------
@@ -523,11 +569,13 @@ def _check_cell_weights(cell_weights: np.ndarray) -> bool:
     """Check if all cell weights are non-negative and if every cell has at least one positive cell weight.
 
     Parameters
+    ----------
     __________
     cell_weights:
         Array of shape ``n_cells`` x ``_lineages`` containing cell to lineage weights.
 
     Returns
+    -------
     ________
         Boolean indicating whether all cell weights are non-negative and if every cell has at least one positive
         cell weight.
@@ -554,9 +602,13 @@ def _calculate_offset(counts: np.ndarray) -> np.ndarray:
     offset = np.log(library_size)
     if (offset == 0).any():
         # TODO: I do not really understand why this is done
-        warnings.warn("Some calculated offsets are 0, offsetting these to 1.", RuntimeWarning)
+        warnings.warn(
+            "Some calculated offsets are 0, offsetting these to 1.", RuntimeWarning
+        )
         offset[offset == 0] = 0  # TODO: this seems like a obvious typo in tradeSeq
     if np.isnan(offset).any():
-        warnings.warn("Some calculated offsets are NaN, offsetting these to 1.", RuntimeWarning)
+        warnings.warn(
+            "Some calculated offsets are NaN, offsetting these to 1.", RuntimeWarning
+        )
         offset[np.isnan(offset)] = 1
     return offset

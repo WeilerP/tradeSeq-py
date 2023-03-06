@@ -1,12 +1,11 @@
 from typing import List, Literal
 
-from rpy2.robjects import numpy2ri, pandas2ri, default_converter
-from rpy2.robjects.packages import importr
-from rpy2.robjects.conversion import localconverter
-import rpy2.robjects as ro
-
 import numpy as np
 import pandas as pd
+import rpy2.robjects as ro
+from rpy2.robjects import default_converter, numpy2ri, pandas2ri
+from rpy2.robjects.conversion import localconverter
+from rpy2.robjects.packages import importr
 
 
 class GAM:
@@ -57,10 +56,12 @@ class GAM:
 
         n_lineages = lineage_assignment.shape[1]
         lineage_assignment = pd.DataFrame(
-            data=lineage_assignment, columns=[f"l{lineage_id}" for lineage_id in range(1, n_lineages + 1)]
+            data=lineage_assignment,
+            columns=[f"l{lineage_id}" for lineage_id in range(1, n_lineages + 1)],
         )
         pseudotimes = pd.DataFrame(
-            data=pseudotimes, columns=[f"t{lineage_id}" for lineage_id in range(1, n_lineages + 1)]
+            data=pseudotimes,
+            columns=[f"t{lineage_id}" for lineage_id in range(1, n_lineages + 1)],
         )
         offsets = pd.DataFrame(data=offsets, columns=["offset"])
 
@@ -203,7 +204,9 @@ def fit(
         bioc = importr("BiocParallel")
         param = bioc.MulticoreParam(worker=n_jobs, progressbar=True)
         with localconverter(numpy2ri.converter + default_converter):
-            res = bioc.bplapply(list(range(1, counts.shape[1] + 1)), ro.globalenv["fit"], BPPARAM=param)
+            res = bioc.bplapply(
+                list(range(1, counts.shape[1] + 1)), ro.globalenv["fit"], BPPARAM=param
+            )
     else:
         base = importr("base")
         res = base.lapply(list(range(1, counts.shape[1] + 1)), ro.globalenv["fit"])
