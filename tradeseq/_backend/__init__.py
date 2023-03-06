@@ -1,10 +1,10 @@
 from tradeseq._backend._test import (
+    AssociationTest,
     DiffEndTest,
     EarlyDETest,
     PatternTest,
-    TradeSeqTest,
     StartVsEndTest,
-    AssociationTest,
+    TradeSeqTest,
 )
 
 __all__ = [

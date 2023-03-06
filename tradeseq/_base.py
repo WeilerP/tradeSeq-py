@@ -1,20 +1,19 @@
-from io import StringIO
-from abc import ABC, abstractmethod
-from typing import Any, Sized, Tuple, Union, Literal, Optional, Sequence, TYPE_CHECKING
-from contextlib import redirect_stderr
-import sys
 import multiprocessing
-
-from anndata import AnnData
-from scipy.sparse import issparse
-from rpy2.robjects import numpy2ri, pandas2ri
-from rpy2.robjects.packages import importr
-from rpy2.robjects.conversion import localconverter
-from rpy2.rinterface_lib.embedded import RRuntimeError
-import rpy2.robjects as ro
+import sys
+from abc import ABC, abstractmethod
+from contextlib import redirect_stderr
+from io import StringIO
+from typing import TYPE_CHECKING, Any, Literal, Optional, Sequence, Sized, Tuple, Union
 
 import numpy as np
 import pandas as pd
+import rpy2.robjects as ro
+from anndata import AnnData
+from rpy2.rinterface_lib.embedded import RRuntimeError
+from rpy2.robjects import numpy2ri, pandas2ri
+from rpy2.robjects.conversion import localconverter
+from rpy2.robjects.packages import importr
+from scipy.sparse import issparse
 
 from tradeseq._backend._base import TradeSeqTest, _load_library
 
@@ -83,7 +82,9 @@ class Test(TestABC, ABC):
             if offset.shape != (self.adata.n_obs,):
                 raise ValueError("TODO: Invalid offset shape.")
             kwargs["offset"] = (
-                ro.vectors.FloatVector(offset) if np.issubdtype(offset.dtype, float) else ro.vectors.IntVector(offset)
+                ro.vectors.FloatVector(offset)
+                if np.issubdtype(offset.dtype, float)
+                else ro.vectors.IntVector(offset)
             )
 
         bpparam = _PARALLEL.bpparam()
@@ -102,7 +103,9 @@ class Test(TestABC, ABC):
         pseudotime = self._get_pseudotime(pseudotime_key, n_lineages=lineages.shape[1])
 
         with redirect_stderr(sys.stderr if verbose else StringIO()):
-            with localconverter(ro.default_converter + numpy2ri.converter + pandas2ri.converter):
+            with localconverter(
+                ro.default_converter + numpy2ri.converter + pandas2ri.converter
+            ):
                 try:
                     self._model = library.fitGAM(
                         counts,
@@ -120,7 +123,9 @@ class Test(TestABC, ABC):
         return self
 
     # TODO: Add docstrings
-    def predict(self, test: Literal["start_end"] = "start_end", *args: Any, **kwargs: Any) -> pd.DataFrame:
+    def predict(
+        self, test: Literal["start_end"] = "start_end", *args: Any, **kwargs: Any
+    ) -> pd.DataFrame:
         """TODO."""
         if self._model is None:
             raise RuntimeError("Run `.fit()` first.")
@@ -128,7 +133,9 @@ class Test(TestABC, ABC):
         test = TradeSeqTest.create(test, model=self._model)
         df = test(*args, **kwargs).set_index(self._genes)
         mapper = {
-            (f"{k}lineage{i + 1}" if k == "logFC" else f"{k}_lineage{i + 1}"): f"{k}_{lin}"
+            (
+                f"{k}lineage{i + 1}" if k == "logFC" else f"{k}_lineage{i + 1}"
+            ): f"{k}_{lin}"
             for k in ("waldStat", "df", "pvalue", "logFC")
             for i, lin in enumerate(self._lineages)
         }

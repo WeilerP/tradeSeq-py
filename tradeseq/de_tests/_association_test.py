@@ -10,10 +10,13 @@ class AssociationTest(WithinLineageTest):
     """The AssociationTest checks whether the expression of a gene varies with pseudotime."""
 
     def __call__(
-        self, n_points: int, contrast_type: Literal["start", "end", "consecutive"], lineage_test, global_test
+        self,
+        n_points: int,
+        contrast_type: Literal["start", "end", "consecutive"],
+        lineage_test,
+        global_test,
     ) -> pd.DataFrame:
-        """
-        Perform AssociationTest.
+        """Perform AssociationTest.
 
         Parameters
         ----------
@@ -48,16 +51,26 @@ class AssociationTest(WithinLineageTest):
         if contrast_type == "start":
             for lineage_id in lineages:
                 pseudotimes_a.append(np.repeat(start[lineage_id], n_points))
-                pseudotimes_b.append(np.linspace(start=start[lineage_id], stop=end[lineage_id], num=n_points))
+                pseudotimes_b.append(
+                    np.linspace(
+                        start=start[lineage_id], stop=end[lineage_id], num=n_points
+                    )
+                )
 
         elif contrast_type == "end":
             for lineage_id in lineages:
                 pseudotimes_a.append(np.repeat(end[lineage_id], n_points))
-                pseudotimes_b.append(np.linspace(start=start[lineage_id], stop=end[lineage_id], num=n_points))
+                pseudotimes_b.append(
+                    np.linspace(
+                        start=start[lineage_id], stop=end[lineage_id], num=n_points
+                    )
+                )
 
         elif contrast_type == "consecutive":
             for lineage_id in lineages:
-                equally_spaced = np.linspace(start=start[lineage_id], stop=end[lineage_id], num=n_points)
+                equally_spaced = np.linspace(
+                    start=start[lineage_id], stop=end[lineage_id], num=n_points
+                )
                 pseudotimes_a.append(equally_spaced[:-1])
                 pseudotimes_b.append(equally_spaced[1:])
 
@@ -66,4 +79,6 @@ class AssociationTest(WithinLineageTest):
                 f"Contrast type cannot be {contrast_type}. Contrast type has to be 'start', 'stop' or 'consecutive'"
             )
 
-        return self._test(pseudotimes_a, pseudotimes_b, lineages, lineage_test, global_test)
+        return self._test(
+            pseudotimes_a, pseudotimes_b, lineages, lineage_test, global_test
+        )

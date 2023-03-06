@@ -1,10 +1,10 @@
-from hypothesis import given, settings, strategies as st
-
 import numpy as np
+from hypothesis import given, settings
+from hypothesis import strategies as st
 
-from tradeseq.gam import GAM
 from tests.core.test_base import get_gam
 from tradeseq.de_tests._start_vs_end_test import StartVsEndTest
+from tradeseq.gam import GAM
 
 
 class TestStartVsEnd:
@@ -15,7 +15,9 @@ class TestStartVsEnd:
     )
     @settings(max_examples=10, deadline=50000)
     def test_constant(self, gam: GAM, constant: int, n_knots: int):
-        gam._adata.X = np.zeros((gam._adata.n_obs, gam._adata.n_vars), dtype=int) + constant
+        gam._adata.X = (
+            np.zeros((gam._adata.n_obs, gam._adata.n_vars), dtype=int) + constant
+        )
         gam._adata.obs[gam._time_key] = np.linspace(0, 5, gam._adata.n_obs)
         del gam._adata.obsm[gam._time_key]
         weights = np.ones((gam._adata.n_obs, gam._n_lineages))
@@ -33,7 +35,11 @@ class TestStartVsEnd:
     )
     @settings(max_examples=10, deadline=50000)
     def test_linear(self, gam: GAM, difference: float, n_knots: int):
-        gam._adata.X = np.repeat(np.linspace(0, difference, gam._adata.n_obs)[:, np.newaxis], gam._adata.n_vars, axis=1)
+        gam._adata.X = np.repeat(
+            np.linspace(0, difference, gam._adata.n_obs)[:, np.newaxis],
+            gam._adata.n_vars,
+            axis=1,
+        )
         gam._adata.obs[gam._time_key] = np.linspace(0, 5, gam._adata.n_obs)
         del gam._adata.obsm[gam._time_key]
         weights = np.ones((gam._adata.n_obs, gam._n_lineages))

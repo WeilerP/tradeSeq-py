@@ -1,11 +1,10 @@
 from typing import Optional
 
-from anndata import AnnData
-from scipy.sparse import csr_matrix
-from hypothesis.extra.numpy import arrays
 import hypothesis.strategies as st
-
 import numpy as np
+from anndata import AnnData
+from hypothesis.extra.numpy import arrays
+from scipy.sparse import csr_matrix
 
 from tradeseq.gam import GAM
 
@@ -71,14 +70,20 @@ def get_adata(
     if deterministic_weights:
         # every cell is assigned to exactly one lineage
         lineage_ids = draw(
-            arrays(dtype=int, elements=st.integers(min_value=0, max_value=n_lineages - 1), shape=(n_obs,))
+            arrays(
+                dtype=int,
+                elements=st.integers(min_value=0, max_value=n_lineages - 1),
+                shape=(n_obs,),
+            )
         )
         weights = np.zeros(shape=(n_obs, n_lineages), dtype=int)
         weights[range(n_obs), lineage_ids] = 1
     else:
         weights = draw(
             arrays(
-                dtype=float, elements=st.floats(min_value=0, max_value=10, exclude_min=True), shape=(n_obs, n_lineages)
+                dtype=float,
+                elements=st.floats(min_value=0, max_value=10, exclude_min=True),
+                shape=(n_obs, n_lineages),
             )
         )
 
@@ -89,7 +94,9 @@ def get_adata(
     adata.var_names = [f"Gene_{var_id:d}" for var_id in range(adata.n_vars)]
 
     adata.obsm[time_key] = pseudotimes
-    adata.obsm[time_key][0, 0] = MAX_INT_VALUE  # make sure that first lineage is longest
+    adata.obsm[time_key][
+        0, 0
+    ] = MAX_INT_VALUE  # make sure that first lineage is longest
 
     adata.obsm[weights_key] = weights
 
@@ -97,7 +104,13 @@ def get_adata(
         adata.layers[layer_key] = counts
 
     if use_offset:
-        offset = draw(arrays(dtype=float, elements=st.floats(min_value=0, max_value=MAX_INT_VALUE), shape=(n_obs,)))
+        offset = draw(
+            arrays(
+                dtype=float,
+                elements=st.floats(min_value=0, max_value=MAX_INT_VALUE),
+                shape=(n_obs,),
+            )
+        )
         adata.obs[offset_key] = offset
 
     return adata
@@ -124,7 +137,6 @@ def get_gam(
     deterministic_weights: bool = False,
     sparse_matrix: bool = False,
 ) -> GAM:
-
     if n_lineages is None:
         n_lineages = draw(st.integers(min_value=min_lineages, max_value=max_lineages))
 
