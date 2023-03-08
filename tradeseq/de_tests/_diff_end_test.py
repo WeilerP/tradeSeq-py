@@ -7,8 +7,7 @@ class DiffEndTest(BetweenLineageTest):
     """The DiffEndTest checks whether a gene is expressed differently at the end of two lineages."""
 
     def __call__(self, pairwise_test: bool, global_test: bool):
-        """
-        Perform DiffEndTest.
+        """Perform DiffEndTest.
 
         Parameters
         ----------

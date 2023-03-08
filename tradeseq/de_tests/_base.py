@@ -1,21 +1,19 @@
 from abc import ABC, abstractmethod
-from typing import List, Union
 from itertools import combinations
-
-from scipy.stats import chi2
+from typing import List, Union
 
 import numpy as np
 import pandas as pd
+from scipy.stats import chi2
 
 from tradeseq.gam import GAM
 
 
 class DifferentialExpressionTest(ABC):
-    """Abstract base class for a DifferntialExpressionTest"""
+    """Abstract base class for a DifferntialExpressionTest."""
 
     def __init__(self, model: GAM):
-        """
-        Initialize WithinLineageTest class.
+        """Initialize WithinLineageTest class.
 
         Parameters
         ----------
@@ -29,8 +27,7 @@ class DifferentialExpressionTest(ABC):
         """Perform the DifferntialExpressionTest."""
 
     def _get_start_pseudotime(self) -> List[float]:
-        """
-        Get pseudotime values for the start of every lineage.
+        """Get pseudotime values for the start of every lineage.
 
         Returns
         -------
@@ -40,8 +37,7 @@ class DifferentialExpressionTest(ABC):
         return [pseudotimes.min() for pseudotimes in pseudotimes_per_lineage]
 
     def _get_end_pseudotime(self) -> List[float]:
-        """
-        Get pseudotime values for the end of every lineage.
+        """Get pseudotime values for the end of every lineage.
 
         Returns
         -------
@@ -62,8 +58,7 @@ class WithinLineageTest(DifferentialExpressionTest):
         lineage_test: bool = False,
         global_test: bool = True,
     ):
-        """
-        Perform Wald tests for all genes comparing the predictions for pseudotime_a with pseudotime_b given an assigment to lineages.
+        """Perform Wald tests for all genes comparing the predictions for pseudotime_a with pseudotime_b given an assigment to lineages.
 
         Parameters
         ----------
@@ -90,16 +85,26 @@ class WithinLineageTest(DifferentialExpressionTest):
             lpmatrices = []
             sigma = self._model.get_covariance(gene_id)
 
-            for pseudotime_a, pseudotime_b, lineage in zip(pseudotimes_a, pseudotimes_b, lineages):
+            for pseudotime_a, pseudotime_b, lineage in zip(
+                pseudotimes_a, pseudotimes_b, lineages
+            ):
                 lineage_array = np.repeat(lineage, len(pseudotime_a))
 
-                pred_a = self._model.predict(gene_id, lineage_array, pseudotime_a, log_scale=True)
-                pred_b = self._model.predict(gene_id, lineage_array, pseudotime_b, log_scale=True)
+                pred_a = self._model.predict(
+                    gene_id, lineage_array, pseudotime_a, log_scale=True
+                )
+                pred_b = self._model.predict(
+                    gene_id, lineage_array, pseudotime_b, log_scale=True
+                )
 
                 predictions.append(pred_a - pred_b)
 
-                lpmatrix_a = self._model.get_lpmatrix(gene_id, lineage_array, pseudotime_a)
-                lpmatrix_b = self._model.get_lpmatrix(gene_id, lineage_array, pseudotime_b)
+                lpmatrix_a = self._model.get_lpmatrix(
+                    gene_id, lineage_array, pseudotime_a
+                )
+                lpmatrix_b = self._model.get_lpmatrix(
+                    gene_id, lineage_array, pseudotime_b
+                )
 
                 lpmatrices.append(lpmatrix_a - lpmatrix_b)
 
@@ -115,7 +120,9 @@ class WithinLineageTest(DifferentialExpressionTest):
                 result[f"{gene_name} globally"] = _wald_test(pred, lpmatrix, sigma)
 
         return pd.DataFrame.from_dict(
-            result, orient="index", columns=["wald statistic", "degrees of freedom", "p value"]
+            result,
+            orient="index",
+            columns=["wald statistic", "degrees of freedom", "p value"],
         )
 
 
@@ -129,8 +136,7 @@ class BetweenLineageTest(DifferentialExpressionTest):
         pairwise_test: bool = False,
         global_test: bool = True,
     ):
-        """
-        Perform Wald tests for all genes comparing the predictions for the given pseudotimes between the lineages.
+        """Perform Wald tests for all genes comparing the predictions for the given pseudotimes between the lineages.
 
         Parameters
         ----------
@@ -157,14 +163,22 @@ class BetweenLineageTest(DifferentialExpressionTest):
             for pseudotime, lineage in zip(pseudotimes, lineages):
                 lineage_array = np.repeat(lineage, len(pseudotime))
 
-                predictions.append(self._model.predict(gene_id, lineage_array, pseudotime, log_scale=True))
-                lpmatrices.append(self._model.get_lpmatrix(gene_id, lineage_array, pseudotime))
+                predictions.append(
+                    self._model.predict(
+                        gene_id, lineage_array, pseudotime, log_scale=True
+                    )
+                )
+                lpmatrices.append(
+                    self._model.get_lpmatrix(gene_id, lineage_array, pseudotime)
+                )
 
             predictions_comb = [
-                predictions[lineage_a] - predictions[lineage_b] for (lineage_a, lineage_b) in combinations(lineages, 2)
+                predictions[lineage_a] - predictions[lineage_b]
+                for (lineage_a, lineage_b) in combinations(lineages, 2)
             ]
             lpmatrices_comb = [
-                lpmatrices[lineage_a] - lpmatrices[lineage_b] for (lineage_a, lineage_b) in combinations(lineages, 2)
+                lpmatrices[lineage_a] - lpmatrices[lineage_b]
+                for (lineage_a, lineage_b) in combinations(lineages, 2)
             ]
 
             if pairwise_test:
@@ -185,7 +199,9 @@ class BetweenLineageTest(DifferentialExpressionTest):
                 result[f"{gene_name} globally"] = _wald_test(pred, lpmatrix, sigma)
 
         return pd.DataFrame.from_dict(
-            result, orient="index", columns=["wald statistic", "degrees of freedom", "p value"]
+            result,
+            orient="index",
+            columns=["wald statistic", "degrees of freedom", "p value"],
         )
 
 

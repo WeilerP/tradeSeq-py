@@ -3,8 +3,6 @@ requires = ['setuptools', 'setuptools_scm']
 build-backend = 'setuptools.build_meta'
 
 [tool.black]
-line-length = 120
-target-version = ['py38']
 include = '\.pyi?$'
 exclude = '''
 (
@@ -20,34 +18,93 @@ exclude = '''
     | build
     | dist
   )/
-
 )
 '''
 
 [tool.isort]
 profile = "black"
-py_version = "38"
-skip = "docs/source/conf.py,.tox,build"
-line_length = 88
-multi_line_output = 3
-include_trailing_comma = true
 use_parentheses = true
-known_num = "numpy,pandas"
-known_plot = "matplotlib"
-sections = "FUTURE,STDLIB,THIRDPARTY,NUM,PLOT,FIRSTPARTY,LOCALFOLDER"
-no_lines_before="LOCALFOLDER"
+known_num = "networkx,numpy,pandas,scipy,sklearn,statmodels"
+known_plot = "matplotlib,mpl_toolkits,seaborn"
+known_bio = "anndata"
+sections = "FUTURE,STDLIB,THIRDPARTY,NUM,PLOT,BIO,FIRSTPARTY,LOCALFOLDER"
+no_lines_before = "LOCALFOLDER"
 balanced_wrapping = true
-force_grid_wrap = 0
-length_sort = "1"
+length_sort = "0"
 indent = "    "
-from_first = true
-order_by_type = true
-atomic = true
-combine_star = true
-combine_as_imports = true
-honor_noqa = true
-remove_redundant_aliases = true
-only_modified = true
-group_by_package = true
-force_alphabetical_sort_within_sections = true
-lexicographical = true
+float_to_top = true
+order_by_type = false
+
+[tool.ruff]
+src = ["."]
+line-length = 119
+target-version = "py38"
+select = [
+    "F",  # Errors detected by Pyflakes
+    "E",  # Error detected by Pycodestyle
+    "W",  # Warning detected by Pycodestyle
+    "I",  # isort
+    "D",  # pydocstyle
+    "B",  # flake8-bugbear
+    "TID",  # flake8-tidy-imports
+    "C4",  # flake8-comprehensions
+    "BLE",  # flake8-blind-except
+    "UP",  # pyupgrade
+    "RUF100",  # Report unused noqa directives
+]
+ignore = [
+    # line too long -> we accept long comment lines; black gets rid of long code lines
+    "E501",
+    # Do not assign a lambda expression, use a def -> lambda expression assignments are convenient
+    "E731",
+    # allow I, O, l as variable names -> I is the identity matrix
+    "E741",
+    # Missing docstring in public package
+    "D104",
+    # Missing docstring in public module
+    "D100",
+    # Missing docstring in __init__
+    "D107",
+    # Errors from function calls in argument defaults. These are fine when the result is immutable.
+    "B008",
+    # __magic__ methods are are often self-explanatory, allow missing docstrings
+    "D105",
+    # first line should end with a period [Bug: doesn't work with single-line docstrings]
+    "D400",
+    # First line should be in imperative mood; try rephrasing
+    "D401",
+    ## Disable one in each pair of mutually incompatible rules
+    # We don’t want a blank line before a class docstring
+    "D203",
+    # We want docstrings to start immediately after the opening triple quote
+    "D213",
+    # Missing argument description in the docstring TODO: enable
+    "D417",
+    # Unable to detect undefined names
+    "F403",
+    # Underfined, or defined from star imports: module
+    "F405",
+    # Within an except clause, raise exceptions with `raise ... from err`
+    "B904",
+]
+
+[tool.ruff.per-file-ignores]
+"docs/*" = ["I", "BLE001"]
+"tests/*" = ["D"]
+"*/__init__.py" = ["F401"]
+"scvelo/__init__.py" = ["I"]
+
+[tool.jupytext]
+formats = "ipynb,md"
+
+[tool.cruft]
+skip = [
+    "tests",
+    "src/**/__init__.py",
+    "src/**/basic.py",
+    "docs/api.md",
+    "docs/changelog.md",
+    "docs/references.bib",
+    "docs/references.md",
+    "docs/notebooks/example.ipynb"
+]
