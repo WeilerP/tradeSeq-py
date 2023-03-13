@@ -153,29 +153,30 @@ class BetweenLineageTest(DifferentialExpressionTest):
         for each gene for each pair of lineages (if ``pairwise_test``) and/or globally (if ``global_test``).
         """
         result = {}
+        lineage_ids = np.array(
+            [
+                lineage_ind
+                for lineage_ind in lineages
+                for n_prediction in range(len(pseudotimes[lineage_ind]))
+            ]
+        )
+        pseudotimes = np.concatenate(pseudotimes)
+
         for gene_id, gene_name in enumerate(self._model._genes):
-            predictions = []
-            lpmatrices = []
             sigma = self._model.get_covariance(gene_id)
 
-            for pseudotime, lineage in zip(pseudotimes, lineages):
-                lineage_array = np.repeat(lineage, len(pseudotime))
-
-                predictions.append(
-                    self._model.predict(
-                        gene_id, lineage_array, pseudotime, log_scale=True
-                    )
-                )
-                lpmatrices.append(
-                    self._model.get_lpmatrix(gene_id, lineage_array, pseudotime)
-                )
+            predictions = self._model.predict(
+                gene_id, lineage_ids, pseudotimes, log_scale=True
+            )
+            lpmatrix = self._model.get_lpmatrix(gene_id, lineage_ids, pseudotimes)
 
             predictions_comb = [
-                predictions[lineage_a] - predictions[lineage_b]
+                predictions[lineage_ids == lineage_a]
+                - predictions[lineage_ids == lineage_b]
                 for (lineage_a, lineage_b) in combinations(lineages, 2)
             ]
             lpmatrices_comb = [
-                lpmatrices[lineage_a] - lpmatrices[lineage_b]
+                lpmatrix[lineage_ids == lineage_a] - lpmatrix[lineage_ids == lineage_b]
                 for (lineage_a, lineage_b) in combinations(lineages, 2)
             ]
 
