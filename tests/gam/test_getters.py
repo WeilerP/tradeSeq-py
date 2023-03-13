@@ -113,7 +113,13 @@ class TestCellAssignment:
         gam._adata.obsm[gam._weights_key][
             :, 0
         ] = 0  # make sure no cell is assigned to first lineage
-        with pytest.raises(RuntimeError):
+
+        expected_error_message = (
+            "No cell was randomly assigned to lineage 0. Delete this lineage, "
+            "increase the weights for this lineage or just try again."
+        )
+
+        with pytest.raises(RuntimeError, match=expected_error_message):
             gam._assign_cells_to_lineages()
 
 
