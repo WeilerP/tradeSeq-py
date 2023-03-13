@@ -1,9 +1,11 @@
 from abc import ABC, abstractmethod
 from itertools import combinations
-from typing import List, Union
+from typing import List, Literal, Union
 
 import numpy as np
 import pandas as pd
+from scipy.linalg import qr
+from scipy.linalg.lapack import dtrtri
 from scipy.stats import chi2
 
 from tradeseq.gam import GAM
@@ -54,7 +56,7 @@ class WithinLineageTest(DifferentialExpressionTest):
         self,
         pseudotimes_a: List[np.ndarray],
         pseudotimes_b: List[np.ndarray],
-        lineages: Union[List[int], np.ndarray[int]],
+        lineages: Union[List[int], np.ndarray],
         lineage_test: bool = False,
         global_test: bool = True,
     ):
@@ -130,7 +132,7 @@ class BetweenLineageTest(DifferentialExpressionTest):
     def _test(
         self,
         pseudotimes: List[np.ndarray],
-        lineages: Union[List[int], np.ndarray[int]],
+        lineages: Union[List[int], np.ndarray],
         pairwise_test: bool = False,
         global_test: bool = True,
     ):
@@ -205,7 +207,12 @@ class BetweenLineageTest(DifferentialExpressionTest):
 
 
 # TODO: add different methods to compute the inverse
-def _wald_test(prediction: np.ndarray, contrast: np.ndarray, sigma: np.ndarray):
+def _wald_test(
+    prediction: np.ndarray,
+    contrast: np.ndarray,
+    sigma: np.ndarray,
+    inverse: Literal["pinv", "QR", "inv"] = "QR",
+):
     """Perform a Wald test for the null hypothesis: contrast * fitted_parameters = 0.
 
     Computes Wald statistics: prediction (contrast sigma contrast^T)^(-1) prediction^T and the corresponding p-value.
@@ -224,7 +231,19 @@ def _wald_test(prediction: np.ndarray, contrast: np.ndarray, sigma: np.ndarray):
     -------
     A tuple containing the Wald statistic, the degrees of freedom and the p value.
     """
-    sigma_inv = np.linalg.pinv(contrast @ sigma @ contrast.T)
+    pivot = _linearly_independent_rows(contrast)
+    contrast = contrast[pivot]  # reduce to linearly independent rows
+    prediction = prediction[pivot]
+
+    if inverse == "QR":
+        q, r = qr(contrast @ sigma @ contrast.T)
+        r_inv, _ = dtrtri(r, lower=0)
+        sigma_inv = r_inv @ q.T
+    elif inverse == "pinv":
+        sigma_inv = np.linalg.pinv(contrast @ sigma @ contrast.T)
+    elif inverse == "inv":
+        sigma_inv = np.linalg.inv(contrast @ sigma @ contrast.T)
+
     wald = prediction @ sigma_inv @ prediction.T
     if wald < 0:
         wald = 0
@@ -232,3 +251,10 @@ def _wald_test(prediction: np.ndarray, contrast: np.ndarray, sigma: np.ndarray):
     df = prediction.shape[0]
     pval = 1 - chi2.cdf(wald, df)
     return wald, df, pval
+
+
+def _linearly_independent_rows(a: np.ndarray) -> np.ndarray:
+    q, r, pivot = qr(a.T, pivoting=True)
+    linearly_independent = np.abs(np.diag(a)) >= 1e-9
+    pivot = pivot[: len(linearly_independent)][linearly_independent]
+    return pivot

@@ -438,7 +438,17 @@ class GAM:
         def sample_lineage(cell_weights_row):
             return np.random.multinomial(1, cell_weights_row / np.sum(cell_weights_row))
 
-        return np.apply_along_axis(sample_lineage, 1, cell_weights), lineage_names
+        lineage_assignment = np.apply_along_axis(sample_lineage, 1, cell_weights)
+
+        if any(lineage_assignment.sum(axis=0) == 0):
+            lineage_name = np.array(lineage_names)[lineage_assignment.sum(axis=0) == 0][
+                0
+            ]
+            raise RuntimeError(
+                f"No cell was randomly assigned to lineage {lineage_name}. Delete this lineage, "
+                f"increase the weights for this lineage or just try again."
+            )
+        return lineage_assignment, lineage_names
 
     def _get_counts(
         self,
