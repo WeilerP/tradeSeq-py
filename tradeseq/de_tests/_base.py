@@ -212,7 +212,7 @@ def _wald_test(
     prediction: np.ndarray,
     contrast: np.ndarray,
     sigma: np.ndarray,
-    inverse: Literal["pinv", "QR"] = "QR",
+    inverse: Literal["pinv", "QR", "inv"] = "QR",
 ):
     """Perform a Wald test for the null hypothesis: contrast * fitted_parameters = 0.
 
@@ -240,11 +240,9 @@ def _wald_test(
         q, r = qr(contrast @ sigma @ contrast.T)
         r_inv, _ = dtrtri(r, lower=0)
         sigma_inv = r_inv @ q.T
-
-    if inverse == "pinv":
+    elif inverse == "pinv":
         sigma_inv = np.linalg.pinv(contrast @ sigma @ contrast.T)
-
-    if inverse == "inv":
+    elif inverse == "inv":
         sigma_inv = np.linalg.inv(contrast @ sigma @ contrast.T)
 
     wald = prediction @ sigma_inv @ prediction.T
