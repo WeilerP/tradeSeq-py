@@ -81,45 +81,43 @@ class WithinLineageTest(DifferentialExpressionTest):
         for each gene for each lineage (if ``lineage_test=True``) and/or globally.
         """
         result = {}
+        lineage_ids = np.array(
+            [
+                lineage_ind
+                for lineage_ind in lineages
+                for n_prediction in range(len(pseudotimes_a[lineage_ind]))
+            ]
+        )
+        pseudotimes_a = np.concatenate(pseudotimes_a)
+        pseudotimes_b = np.concatenate(pseudotimes_b)
+
         for gene_id, gene_name in enumerate(self._model._genes):
-            # TODO: parallelize
-            predictions = []
-            lpmatrices = []
             sigma = self._model.get_covariance(gene_id)
 
-            for pseudotime_a, pseudotime_b, lineage in zip(
-                pseudotimes_a, pseudotimes_b, lineages
-            ):
-                lineage_array = np.repeat(lineage, len(pseudotime_a))
+            pred_a = self._model.predict(
+                gene_id, lineage_ids, pseudotimes_a, log_scale=True
+            )
+            pred_b = self._model.predict(
+                gene_id, lineage_ids, pseudotimes_b, log_scale=True
+            )
+            pred_diff = pred_a - pred_b
+            lpmatrix_a = self._model.get_lpmatrix(gene_id, lineage_ids, pseudotimes_a)
+            lpmatrix_b = self._model.get_lpmatrix(gene_id, lineage_ids, pseudotimes_b)
+            lpmatrix_diff = lpmatrix_a - lpmatrix_b
 
-                pred_a = self._model.predict(
-                    gene_id, lineage_array, pseudotime_a, log_scale=True
-                )
-                pred_b = self._model.predict(
-                    gene_id, lineage_array, pseudotime_b, log_scale=True
-                )
-
-                predictions.append(pred_a - pred_b)
-
-                lpmatrix_a = self._model.get_lpmatrix(
-                    gene_id, lineage_array, pseudotime_a
-                )
-                lpmatrix_b = self._model.get_lpmatrix(
-                    gene_id, lineage_array, pseudotime_b
-                )
-
-                lpmatrices.append(lpmatrix_a - lpmatrix_b)
-
-                if lineage_test:
+            if lineage_test:
+                for lineage in lineages:
                     lineage_name = self._model.lineage_names[lineage]
                     result[f"{gene_name} in lineage {lineage_name}"] = _wald_test(
-                        pred_a - pred_b, lpmatrix_a - lpmatrix_b, sigma
+                        pred_diff[lineage_ids == lineage],
+                        lpmatrix_diff[lineage_ids == lineage],
+                        sigma,
                     )
 
             if global_test:
-                pred = np.concatenate(predictions)
-                lpmatrix = np.concatenate(lpmatrices, axis=0)
-                result[f"{gene_name} globally"] = _wald_test(pred, lpmatrix, sigma)
+                result[f"{gene_name} globally"] = _wald_test(
+                    pred_diff, lpmatrix_diff, sigma
+                )
 
         return pd.DataFrame.from_dict(
             result,
@@ -157,29 +155,30 @@ class BetweenLineageTest(DifferentialExpressionTest):
         for each gene for each pair of lineages (if ``pairwise_test``) and/or globally (if ``global_test``).
         """
         result = {}
+        lineage_ids = np.array(
+            [
+                lineage_ind
+                for lineage_ind in lineages
+                for n_prediction in range(len(pseudotimes[lineage_ind]))
+            ]
+        )
+        pseudotimes = np.concatenate(pseudotimes)
+
         for gene_id, gene_name in enumerate(self._model._genes):
-            predictions = []
-            lpmatrices = []
             sigma = self._model.get_covariance(gene_id)
 
-            for pseudotime, lineage in zip(pseudotimes, lineages):
-                lineage_array = np.repeat(lineage, len(pseudotime))
-
-                predictions.append(
-                    self._model.predict(
-                        gene_id, lineage_array, pseudotime, log_scale=True
-                    )
-                )
-                lpmatrices.append(
-                    self._model.get_lpmatrix(gene_id, lineage_array, pseudotime)
-                )
+            predictions = self._model.predict(
+                gene_id, lineage_ids, pseudotimes, log_scale=True
+            )
+            lpmatrix = self._model.get_lpmatrix(gene_id, lineage_ids, pseudotimes)
 
             predictions_comb = [
-                predictions[lineage_a] - predictions[lineage_b]
+                predictions[lineage_ids == lineage_a]
+                - predictions[lineage_ids == lineage_b]
                 for (lineage_a, lineage_b) in combinations(lineages, 2)
             ]
             lpmatrices_comb = [
-                lpmatrices[lineage_a] - lpmatrices[lineage_b]
+                lpmatrix[lineage_ids == lineage_a] - lpmatrix[lineage_ids == lineage_b]
                 for (lineage_a, lineage_b) in combinations(lineages, 2)
             ]
 
