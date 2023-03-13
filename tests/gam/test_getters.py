@@ -109,7 +109,7 @@ class TestCellAssignment:
 
     @given(gam=get_gam(min_lineages=2))
     @settings(max_examples=50, deadline=1000)
-    def test__no_cell_assignment(self, gam: GAM):
+    def test_no_cell_assignment(self, gam: GAM):
         gam._adata.obsm[gam._weights_key][
             :, 0
         ] = 0  # make sure no cell is assigned to first lineage
