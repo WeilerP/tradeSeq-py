@@ -56,7 +56,7 @@ class WithinLineageTest(DifferentialExpressionTest):
         self,
         pseudotimes_a: List[np.ndarray],
         pseudotimes_b: List[np.ndarray],
-        lineages: Union[List[int], np.ndarray[int]],
+        lineages: Union[List[int], np.ndarray],
         lineage_test: bool = False,
         global_test: bool = True,
     ):
@@ -134,7 +134,7 @@ class BetweenLineageTest(DifferentialExpressionTest):
     def _test(
         self,
         pseudotimes: List[np.ndarray],
-        lineages: Union[List[int], np.ndarray[int]],
+        lineages: Union[List[int], np.ndarray],
         pairwise_test: bool = False,
         global_test: bool = True,
     ):

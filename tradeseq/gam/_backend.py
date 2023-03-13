@@ -7,6 +7,8 @@ from rpy2.robjects import default_converter, numpy2ri, pandas2ri
 from rpy2.robjects.conversion import localconverter
 from rpy2.robjects.packages import importr
 
+stats = importr("stats")
+
 
 class GAM:
     """GAM backend class encapsulating R gam object."""
@@ -52,8 +54,6 @@ class GAM:
         A np.ndarray of shape (``n_predictions``,``n_variables``), the linear predictor matrix if return_type is
         "lpmatrix".
         """
-        stats = importr("stats")  # TODO: import only once
-
         n_lineages = lineage_assignment.shape[1]
         lineage_assignment = pd.DataFrame(
             data=lineage_assignment,

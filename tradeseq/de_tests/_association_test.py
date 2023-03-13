@@ -11,10 +11,10 @@ class AssociationTest(WithinLineageTest):
 
     def __call__(
         self,
-        n_points: int,
-        contrast_type: Literal["start", "end", "consecutive"],
-        lineage_test,
-        global_test,
+        n_points: int = 12,
+        contrast_type: Literal["start", "end", "consecutive"] = "consecutive",
+        lineage_test: bool = False,
+        global_test: bool = True,
     ) -> pd.DataFrame:
         """Perform AssociationTest.
 
