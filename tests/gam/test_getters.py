@@ -9,13 +9,13 @@ from tradeseq.gam._gam import GAM
 
 
 class TestGetPseudotime:
-    @given(gam=get_gam())
+    @given(gam=get_gam(max_lineages=3))
     def test_invalid_shape(self, gam):
         gam._n_lineages = gam._n_lineages + 1
         with pytest.raises(ValueError):
             gam._get_pseudotime()
 
-    @given(gam=get_gam(min_lineages=2))
+    @given(gam=get_gam(min_lineages=2, max_lineages=4))
     def test_first_lineage_longest(self, gam):
         gam._adata.obsm[gam._time_key][0, 1] = (
             MAX_INT_VALUE + 1
@@ -23,16 +23,16 @@ class TestGetPseudotime:
         with pytest.warns(RuntimeWarning):
             gam._get_pseudotime()
 
-    @given(gam=get_gam())
+    @given(gam=get_gam(max_lineages=3))
     @settings(max_examples=50, deadline=1000)
     def test_shape(self, gam: GAM):
         pseudotime = gam._get_pseudotime()
         assert isinstance(pseudotime, np.ndarray)
         assert pseudotime.shape == (gam._adata.n_obs, gam._n_lineages)
 
-    @given(gam=get_gam(), data=st.data())
+    @given(gam=get_gam(max_lineages=3), data=st.data())
     @settings(max_examples=50, deadline=1000)
-    def test_single_lineage(self, gam: GAM, data):
+    def test_single_pseudotime(self, gam: GAM, data):
         del gam._adata.obsm[gam._time_key]
         gam._adata.obs[gam._time_key] = data.draw(
             arrays(np.float64, (gam._adata.n_obs,))
@@ -43,7 +43,7 @@ class TestGetPseudotime:
 
 
 class TestGetLineage:
-    @given(gam=get_gam())
+    @given(gam=get_gam(max_lineages=3))
     @settings(max_examples=50, deadline=1000)
     def test_shape(self, gam: GAM):
         weights, names = gam._get_lineage()
@@ -54,7 +54,7 @@ class TestGetLineage:
         assert weights.shape == (gam._adata.n_obs, gam._n_lineages)
         assert len(names) == gam._n_lineages
 
-    @given(gam=get_gam(), weights_key2=st.text())
+    @given(gam=get_gam(max_lineages=3), weights_key2=st.text())
     def test_invalid_key(self, gam, weights_key2):
         assume(weights_key2 not in gam._adata.obsm.keys())
         gam._weights_key = weights_key2
@@ -95,7 +95,7 @@ class TestCellAssignment:
         with pytest.raises(ValueError):
             gam._assign_cells_to_lineages()
 
-    @given(gam=get_gam())
+    @given(gam=get_gam(max_lineages=3, n_obs=200))
     @settings(max_examples=50, deadline=1000)
     def test_assignment(self, gam: GAM):
         assign, lineage_names = gam._assign_cells_to_lineages()
@@ -106,6 +106,21 @@ class TestCellAssignment:
 
         assert isinstance(lineage_names, list)
         assert len(lineage_names) == gam._n_lineages
+
+    @given(gam=get_gam(min_lineages=2))
+    @settings(max_examples=50, deadline=1000)
+    def test_no_cell_assignment(self, gam: GAM):
+        gam._adata.obsm[gam._weights_key][
+            :, 0
+        ] = 0  # make sure no cell is assigned to first lineage
+
+        expected_error_message = (
+            "No cell was randomly assigned to lineage 0. Delete this lineage, "
+            "increase the weights for this lineage or just try again."
+        )
+
+        with pytest.raises(RuntimeError, match=expected_error_message):
+            gam._assign_cells_to_lineages()
 
 
 class TestGetCounts:
