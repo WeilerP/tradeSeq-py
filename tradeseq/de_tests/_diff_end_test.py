@@ -6,7 +6,7 @@ from tradeseq.de_tests._base import BetweenLineageTest
 class DiffEndTest(BetweenLineageTest):
     """The DiffEndTest checks whether a gene is expressed differently at the end of two lineages."""
 
-    def __call__(self, pairwise_test: bool, global_test: bool):
+    def __call__(self, pairwise_test: bool = False, global_test: bool = True):
         """Perform DiffEndTest.
 
         Parameters
