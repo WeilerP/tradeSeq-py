@@ -73,6 +73,8 @@ class WithinLineageTest(DifferentialExpressionTest):
             Boolean indicating whether a test should be performed per lineage (independent of other lineages).
         global_test
             Boolean indicating whether a global_test should be performed (across all lineages).
+        l2fc
+            Log2 fold change cut off.
 
         Returns
         -------
