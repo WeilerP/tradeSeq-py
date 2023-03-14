@@ -41,6 +41,7 @@ class TestAssociation:
         )
 
         np.testing.assert_allclose(result["p value"], 1)
+        np.testing.assert_allclose(result["log fold change"], 0, atol=1e-5)
 
     @given(
         gam=get_gam(n_vars=2, min_obs=60, max_obs=100, n_lineages=2),
