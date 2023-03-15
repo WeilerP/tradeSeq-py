@@ -15,7 +15,7 @@ authors = [
     {name = "Michal Klein"},
 ]
 maintainers = [
-    {name = "Niklas Kemper"},
+    {name = "Niklas Kemper", email = "niklas.kemper@tum.de"},
     {name = "Philipp Weiler", email = "philipp.weiler@helmholtz-muenchen.de"},
 ]
 urls.Documentation = "https://todo.com"  # TODO
