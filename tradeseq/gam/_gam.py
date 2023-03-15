@@ -563,7 +563,7 @@ class GAM:
         self,
         n_knots_options: List[int],
         family: str = "nb",
-        n_genes: int = 500,
+        n_vars: int = 500,
         n_jobs: int = 1,
         plot: bool = True,
     ) -> pd.DataFrame:
@@ -576,7 +576,7 @@ class GAM:
         family
             Family of probability distributions that is used for fitting the GAM. Defaults to the negative binomial.
             distributions. Can be any family available in mgcv.gam.
-        n_genes
+        n_vars
             Number of randomly sampled genes that are used for the evaluation.
         n_jobs
             Number of jobs that are used for fitting. If n_jobs > 2, the R library biocParallel is used for fitting the
@@ -595,9 +595,9 @@ class GAM:
             )
 
         aic = []
-        gene_ind_sample = np.random.randint(0, self._adata.n_vars, size=(n_genes,))
+        var_ind_sample = np.random.randint(0, self._adata.n_vars, size=(n_vars,))
         gam = GAM(
-            self._adata[:, gene_ind_sample],
+            self._adata[:, var_ind_sample],
             self._n_lineages,
             self._time_key,
             self._weights_key,
@@ -609,22 +609,22 @@ class GAM:
             gam.fit(family, n_knots, n_jobs)
             aic.append(gam.get_aic())
 
-        gene_names = self._adata.var_names[gene_ind_sample]
-        result = pd.DataFrame(aic, index=n_knots_options, columns=gene_names)
+        var_names = self._adata.var_names[var_ind_sample]
+        result = pd.DataFrame(aic, index=n_knots_options, columns=var_names)
         result["Number of knots"] = n_knots_options
-        result["Mean AIC"] = result[gene_names].mean(axis=1)
+        result["Mean AIC"] = result[var_names].mean(axis=1)
         result["Mean Relative AIC"] = (
-            result[gene_names] / result[gene_names].iloc[0]
+            result[var_names] / result[var_names].iloc[0]
         ).mean(axis=1)
         result["Number of Genes with optimal n_knots"] = (
-            result[gene_names] == result[gene_names].min(axis=0)
+            result[var_names] == result[var_names].min(axis=0)
         ).sum(axis=1)
 
         if plot:
             fig, axs = plt.subplots(ncols=4)
 
             sns.boxplot(
-                data=(result[gene_names] - result[gene_names].mean(axis=0)).T, ax=axs[0]
+                data=(result[var_names] - result[var_names].mean(axis=0)).T, ax=axs[0]
             )
             axs[0].set_xlabel("Number of knots")
             axs[0].set_ylabel("Deviation from gene-wise average AIC")
