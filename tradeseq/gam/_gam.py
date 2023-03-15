@@ -567,14 +567,14 @@ class GAM:
         n_jobs: int = 1,
         plot: bool = True,
     ) -> pd.DataFrame:
-        """Evaluate different choices for n_knots.
+        """Evaluate different choices for number of knots.
 
         Parameters
         ----------
         n_knots_options
-            List of different options for n_knots (usual choices for n_knots are between 3 and 10).
+            List of different options for number of knots (usual choices for are between 3 and 10).
         family
-            Family of probability distributions that is used for fitting the GAM. Defaults to the negative binomial.
+            Family of probability distributions that is used for fitting the GAM. Defaults to the negative binomial
             distributions. Can be any family available in mgcv.gam.
         n_vars
             Number of randomly sampled genes that are used for the evaluation.
@@ -582,12 +582,12 @@ class GAM:
             Number of jobs that are used for fitting. If n_jobs > 2, the R library biocParallel is used for fitting the
             GAMs in parallel.
         plot
-            Boolean indicating whether plots evaluating the different choices for n_knots should be shown.
+            Boolean indicating whether plots evaluating the different choices for number of knots should be shown.
 
         Returns
         -------
-            Pandas dataframe containing AIC of the sampled genes for the different choices for n_knots and the mean AIC,
-            the relative mean AIC and the number of knots that have the optimal AIC for this value of n_knots.
+        Pandas DataFrame containing AIC of the sampled genes for the different choices for n_knots and the mean AIC,
+        the relative mean AIC and the number of knots that have the optimal AIC for this value of n_knots.
         """
         if any(n_knots < 3 for n_knots in n_knots_options):
             raise RuntimeError(
