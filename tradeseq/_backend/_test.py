@@ -1,11 +1,13 @@
 from abc import ABC
 from typing import Any, Literal, Optional, Sequence
 
-import pandas as pd
-import rpy2.robjects as ro
 from packaging.version import parse
 
-from tradeseq._backend._base import TradeSeqTest, _load_library, register
+import pandas as pd
+
+import rpy2.robjects as ro
+
+from tradeseq._backend._base import _load_library, register, TradeSeqTest
 
 
 # TODO: Add docstrings

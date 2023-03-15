@@ -3,19 +3,21 @@ import sys
 from abc import ABC, abstractmethod
 from contextlib import redirect_stderr
 from io import StringIO
-from typing import TYPE_CHECKING, Any, Literal, Optional, Sequence, Sized, Tuple, Union
+from typing import Any, Literal, Optional, Sequence, Sized, Tuple, TYPE_CHECKING, Union
 
 import numpy as np
 import pandas as pd
+from scipy.sparse import issparse
+
 import rpy2.robjects as ro
-from anndata import AnnData
 from rpy2.rinterface_lib.embedded import RRuntimeError
 from rpy2.robjects import numpy2ri, pandas2ri
 from rpy2.robjects.conversion import localconverter
 from rpy2.robjects.packages import importr
-from scipy.sparse import issparse
 
-from tradeseq._backend._base import TradeSeqTest, _load_library
+from anndata import AnnData
+
+from tradeseq._backend._base import _load_library, TradeSeqTest
 
 _PARALLEL = importr("BiocParallel")
 
