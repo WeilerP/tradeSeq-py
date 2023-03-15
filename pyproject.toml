@@ -2,6 +2,69 @@
 requires = ['setuptools', 'setuptools_scm']
 build-backend = 'setuptools.build_meta'
 
+[project]
+name = "tradeseq"
+version = "0.0.0"
+description = "tradeSeq - TRAjectory Differential Expression analysis for SEQuencing data"
+readme = "README.md"
+requires-python = ">=3.8"
+license = {file = "LICENSE"}
+authors = [
+    {name = "Niklas Kemper"},
+    {name = "Philipp Weiler"},
+    {name = "Michal Klein"},
+]
+maintainers = [
+    {name = "Niklas Kemper"},
+    {name = "Philipp Weiler", email = "philipp.weiler@helmholtz-muenchen.de"},
+]
+urls.Documentation = "https://todo.com"  # TODO
+urls.Source = "https://github.com/WeilerP/tradeSeq-pyn"
+urls.Home-page = "https://github.com/WeilerP/tradeSeq-py"
+classifiers = [
+    "Development Status :: 3 - Alpha",  # TODO: Change
+    "Intended Audience :: Science/Research",
+    "Natural Language :: English",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: POSIX :: Linux",
+    "Operating System :: MacOS :: MacOS X",
+    "Typing :: Typed",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Environment :: Console",
+    "Framework :: Jupyter",
+    "Topic :: Scientific/Engineering :: Bio-Informatics",
+    "Topic :: Scientific/Engineering :: Visualization",
+]
+keywords = [
+    "single-cell",
+    "bio-informatics",
+    "lineage",
+    "differential expression"
+]
+dependencies = [
+    "anndata",
+    "conorm",
+    "matplotlib",
+    "numpy",
+    "pandas>=1.4.0",
+    "rpy2",
+    "scipy",
+    "seaborn"
+]
+
+[project.optional-dependencies]
+dev = [
+    "pre-commit>=2.16.0"
+]
+test = [
+    "hypothesis",
+    "pytest>7",
+    "pytest-cov"
+]
+
 [tool.black]
 include = '\.pyi?$'
 exclude = '''
