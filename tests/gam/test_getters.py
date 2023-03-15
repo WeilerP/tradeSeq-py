@@ -1,10 +1,11 @@
-import numpy as np
 import pytest
 from hypothesis import assume, given, settings
 from hypothesis import strategies as st
 from hypothesis.extra.numpy import arrays
 
-from tests.core.test_base import MAX_INT_VALUE, get_gam
+import numpy as np
+
+from tests.core.test_base import get_gam, MAX_INT_VALUE
 from tradeseq.gam._gam import GAM
 
 

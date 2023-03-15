@@ -1,10 +1,12 @@
 from typing import Optional
 
 import hypothesis.strategies as st
-import numpy as np
-from anndata import AnnData
 from hypothesis.extra.numpy import arrays
+
+import numpy as np
 from scipy.sparse import csr_matrix
+
+from anndata import AnnData
 
 from tradeseq.gam import GAM
 

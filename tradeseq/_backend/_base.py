@@ -1,6 +1,5 @@
 from abc import ABC, abstractmethod
 from typing import (
-    TYPE_CHECKING,
     Any,
     Callable,
     Dict,
@@ -8,16 +7,19 @@ from typing import (
     Optional,
     Tuple,
     Type,
+    TYPE_CHECKING,
     Union,
 )
 
+from packaging.version import LegacyVersion, parse, Version
+
 import pandas as pd
+
 import rpy2.robjects as ro
-from packaging.version import LegacyVersion, Version, parse
 from rpy2.rinterface_lib.embedded import RRuntimeError
 from rpy2.robjects import pandas2ri
 from rpy2.robjects.conversion import localconverter
-from rpy2.robjects.packages import InstalledSTPackage, PackageNotInstalledError, importr
+from rpy2.robjects.packages import importr, InstalledSTPackage, PackageNotInstalledError
 
 __all__ = ("TradeSeqTest", "register")
 

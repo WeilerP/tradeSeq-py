@@ -1,13 +1,16 @@
 import warnings
 from typing import List, Optional, Tuple, Union
 
-import matplotlib.pyplot as plt
+from conorm import tmm_norm_factors
+
 import numpy as np
 import pandas as pd
-import seaborn as sns
-from anndata import AnnData
-from conorm import tmm_norm_factors
 from scipy.sparse import issparse
+
+import matplotlib.pyplot as plt
+import seaborn as sns
+
+from anndata import AnnData
 
 from tradeseq.gam import _backend
 
