@@ -255,6 +255,6 @@ def _wald_test(
 
 def _linearly_independent_rows(a: np.ndarray) -> np.ndarray:
     q, r, pivot = qr(a.T, pivoting=True)
-    linearly_independent = np.abs(np.diag(a)) >= 1e-9
+    linearly_independent = np.abs(np.diag(r)) >= 1e-9
     pivot = pivot[: len(linearly_independent)][linearly_independent]
     return pivot
