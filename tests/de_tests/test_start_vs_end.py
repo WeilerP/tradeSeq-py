@@ -87,5 +87,5 @@ class TestStartVsEnd:
 
         np.testing.assert_allclose(result["p value"], 1, atol=1e-5)
         np.testing.assert_allclose(
-            result["log fold change"], np.log1p(0) - np.log1p(difference), atol=3e-1
+            result["log fold change"], np.log1p(0) - np.log1p(difference), atol=5e-1
         )

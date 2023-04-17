@@ -153,6 +153,7 @@ class BetweenLineageTest(DifferentialExpressionTest):
         lineages: Union[List[int], np.ndarray],
         pairwise_test: bool = False,
         global_test: bool = True,
+        l2fc: float = 0,
     ):
         """Perform Wald tests for all genes comparing the predictions for the given pseudotimes between the lineages.
 
@@ -166,6 +167,8 @@ class BetweenLineageTest(DifferentialExpressionTest):
             Boolean indicating whether a test should be performed for all pairs of lineages (independent of other lineages).
         global_test
             Boolean indicating whether a global_test should be performed (across all lineages).
+        l2fc
+            Log2 fold change cut off.
 
         Returns
         -------
@@ -195,32 +198,53 @@ class BetweenLineageTest(DifferentialExpressionTest):
                 - predictions[lineage_ids == lineage_b]
                 for (lineage_a, lineage_b) in combinations(lineages, 2)
             ]
+
+            fold_changes = [np.mean(pred) for pred in predictions_comb]
+
+            # apply fold change cut off
+            for pred in predictions_comb:
+                _fold_change_cutoff(pred, l2fc)
+
             lpmatrices_comb = [
                 lpmatrix[lineage_ids == lineage_a] - lpmatrix[lineage_ids == lineage_b]
                 for (lineage_a, lineage_b) in combinations(lineages, 2)
             ]
 
             if pairwise_test:
-                for prediction_diff, lpmatrix_diff, (lineage_a, lineage_b) in zip(
-                    predictions_comb, lpmatrices_comb, combinations(lineages, 2)
+                for (
+                    prediction_diff,
+                    lpmatrix_diff,
+                    (lineage_a, lineage_b),
+                    fold_change,
+                ) in zip(
+                    predictions_comb,
+                    lpmatrices_comb,
+                    combinations(lineages, 2),
+                    fold_changes,
                 ):
+                    wald_stat, df, p_value = _wald_test(
+                        prediction_diff, lpmatrix_diff, sigma
+                    )
                     result[
                         f"{gene_name} between lineages {self._model.lineage_names[lineage_a]} and {self._model.lineage_names[lineage_b]}"
-                    ] = _wald_test(
-                        prediction_diff,
-                        lpmatrix_diff,
-                        sigma,
-                    )
+                    ] = (wald_stat, df, p_value, fold_change)
 
             if global_test:
                 pred = np.concatenate(predictions_comb)
                 lpmatrix = np.concatenate(lpmatrices_comb, axis=0)
-                result[f"{gene_name} globally"] = _wald_test(pred, lpmatrix, sigma)
+                wald_stat, df, p_value = _wald_test(pred, lpmatrix, sigma)
+                fc_global = np.mean(fold_changes)
+                result[f"{gene_name} globally"] = wald_stat, df, p_value, fc_global
 
         return pd.DataFrame.from_dict(
             result,
             orient="index",
-            columns=["wald statistic", "degrees of freedom", "p value"],
+            columns=[
+                "wald statistic",
+                "degrees of freedom",
+                "p value",
+                "log fold change",
+            ],
         )
 
 

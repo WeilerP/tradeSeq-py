@@ -15,6 +15,7 @@ class PatternTest(BetweenLineageTest):
         n_points: int = 6,
         pairwise_test: bool = False,
         global_test: bool = True,
+        l2fc: float = 0,
     ):
         """Perform generalized PatternTest.
 
@@ -40,10 +41,12 @@ class PatternTest(BetweenLineageTest):
             lineages).
         global_test
             Boolean indicating whether a global_test should be performed (across all lineages).
+        l2fc
+            Log2 fold change cut off.
 
         Returns
         -------
-        A Pandas ``DataFrame`` containing the Wald statistic, the degrees of freedom and the p-value
+        A Pandas ``DataFrame`` containing the Wald statistic, the degrees of freedom, the p-value and the mean log2 fold change
         for each gene for each pair of lineages (if ``pairwise_test=True``) and/or globally (if ``global_test=True``).
         """
         n_lineages = self._model._n_lineages
@@ -64,4 +67,6 @@ class PatternTest(BetweenLineageTest):
         pseudotimes = [pseudotime.flatten() for pseudotime in pseudotimes]
         lineage_assigment = np.arange(0, n_lineages)
 
-        return self._test(pseudotimes, lineage_assigment, pairwise_test, global_test)
+        return self._test(
+            pseudotimes, lineage_assigment, pairwise_test, global_test, l2fc
+        )

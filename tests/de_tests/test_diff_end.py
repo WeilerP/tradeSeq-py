@@ -1,3 +1,5 @@
+from itertools import combinations
+
 from hypothesis import given, settings
 from hypothesis import strategies as st
 
@@ -28,6 +30,7 @@ class TestDiffEnd:
         result = DiffEndTest(gam)(pairwise_test=True, global_test=True)
 
         np.testing.assert_allclose(result["p value"], 1)
+        np.testing.assert_allclose(result["log fold change"], 0, atol=1e-7)
 
     @given(
         gam=get_gam(n_vars=2, min_obs=60, max_obs=100, n_lineages=3),
@@ -59,5 +62,52 @@ class TestDiffEnd:
         result = DiffEndTest(gam)(pairwise_test=True, global_test=True)
 
         np.testing.assert_allclose(result["p value"], 0, atol=1e-4)
+        for gene_id in range(gam._adata.n_vars):
+            for lineage1, lineage2 in combinations(range(n_lineages), 2):
+                np.testing.assert_allclose(
+                    result.at[
+                        f"Gene_{gene_id} between lineages {lineage1} and {lineage2}",
+                        "log fold change",
+                    ],
+                    np.log(1 + lineage1 * difference)
+                    - np.log(1 + lineage2 * difference),
+                    atol=1e-4,
+                )
 
     # TODO: test with one lineage constantly at 0 (failed for me for some reason)
+
+    @given(
+        gam=get_gam(n_vars=2, min_obs=60, max_obs=100, n_lineages=3),
+        difference=st.integers(10, 100),
+        n_knots=st.integers(min_value=2, max_value=4),
+    )
+    @settings(max_examples=10, deadline=50000)
+    def test_different_fc(self, gam: GAM, difference: float, n_knots: int):
+        n_lineages = 3
+        n_obs = gam._adata.n_obs
+        interval = n_obs // n_lineages
+        gam._adata.X = np.ones((n_obs, gam._adata.n_vars), dtype=int)
+        gam._adata.X[interval : 2 * interval, :] += difference
+        gam._adata.X[2 * interval :, :] += 2 * difference
+        # pseudotime values should not matter
+        gam._adata.obs[gam._time_key] = np.random.uniform(0.0, 1.0, n_obs)
+        del gam._adata.obsm[gam._time_key]
+
+        weights = np.zeros((gam._adata.n_obs, gam._n_lineages))
+        weights[:interval, 0] = 1
+        weights[interval : 2 * interval, 1] = 1
+        weights[2 * interval :, 2] = 1
+        gam._adata.obsm[gam._weights_key] = weights
+
+        gam._adata.obs["offset"] = np.zeros(gam._adata.n_obs)
+        gam._offset_key = "offset"
+        gam.fit(n_knots=n_knots)
+
+        # fold change cut off should transform all differences to 0
+        result = DiffEndTest(gam)(
+            pairwise_test=True,
+            global_test=True,
+            l2fc=np.abs(np.log(1) - np.log(3 * difference)),
+        )
+
+        np.testing.assert_allclose(result["p value"], 1, atol=1e-4)
