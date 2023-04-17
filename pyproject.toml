@@ -2,6 +2,69 @@
 requires = ['setuptools', 'setuptools_scm']
 build-backend = 'setuptools.build_meta'
 
+[project]
+name = "tradeseq"
+version = "0.0.0"
+description = "tradeSeq - TRAjectory Differential Expression analysis for SEQuencing data"
+readme = "README.md"
+requires-python = ">=3.8"
+license = {file = "LICENSE"}
+authors = [
+    {name = "Niklas Kemper"},
+    {name = "Philipp Weiler"},
+    {name = "Michal Klein"},
+]
+maintainers = [
+    {name = "Niklas Kemper", email = "niklas.kemper@tum.de"},
+    {name = "Philipp Weiler", email = "philipp.weiler@helmholtz-muenchen.de"},
+]
+urls.Documentation = "https://todo.com"  # TODO
+urls.Source = "https://github.com/WeilerP/tradeSeq-pyn"
+urls.Home-page = "https://github.com/WeilerP/tradeSeq-py"
+classifiers = [
+    "Development Status :: 3 - Alpha",  # TODO: Change
+    "Intended Audience :: Science/Research",
+    "Natural Language :: English",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: POSIX :: Linux",
+    "Operating System :: MacOS :: MacOS X",
+    "Typing :: Typed",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Environment :: Console",
+    "Framework :: Jupyter",
+    "Topic :: Scientific/Engineering :: Bio-Informatics",
+    "Topic :: Scientific/Engineering :: Visualization",
+]
+keywords = [
+    "single-cell",
+    "bio-informatics",
+    "lineage",
+    "differential expression"
+]
+dependencies = [
+    "anndata",
+    "conorm",
+    "matplotlib",
+    "numpy",
+    "pandas>=1.4.0",
+    "rpy2",
+    "scipy",
+    "seaborn"
+]
+
+[project.optional-dependencies]
+dev = [
+    "pre-commit>=2.16.0"
+]
+test = [
+    "hypothesis",
+    "pytest>7",
+    "pytest-cov"
+]
+
 [tool.black]
 include = '\.pyi?$'
 exclude = '''
@@ -27,7 +90,9 @@ use_parentheses = true
 known_num = "networkx,numpy,pandas,scipy,sklearn,statmodels"
 known_plot = "matplotlib,mpl_toolkits,seaborn"
 known_bio = "anndata"
-sections = "FUTURE,STDLIB,THIRDPARTY,NUM,PLOT,BIO,FIRSTPARTY,LOCALFOLDER"
+known_r = "rpy2"
+known_firstparty = "tradeseq"
+sections = "FUTURE,STDLIB,THIRDPARTY,NUM,PLOT,R,BIO,FIRSTPARTY,LOCALFOLDER"
 no_lines_before = "LOCALFOLDER"
 balanced_wrapping = true
 length_sort = "0"
@@ -43,7 +108,6 @@ select = [
     "F",  # Errors detected by Pyflakes
     "E",  # Error detected by Pycodestyle
     "W",  # Warning detected by Pycodestyle
-    "I",  # isort
     "D",  # pydocstyle
     "B",  # flake8-bugbear
     "TID",  # flake8-tidy-imports
@@ -89,10 +153,9 @@ ignore = [
 ]
 
 [tool.ruff.per-file-ignores]
-"docs/*" = ["I", "BLE001"]
+"docs/*" = ["BLE001"]
 "tests/*" = ["D"]
 "*/__init__.py" = ["F401"]
-"scvelo/__init__.py" = ["I"]
 
 [tool.jupytext]
 formats = "ipynb,md"

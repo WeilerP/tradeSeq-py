@@ -2,6 +2,7 @@ from typing import List, Literal
 
 import numpy as np
 import pandas as pd
+
 import rpy2.robjects as ro
 from rpy2.robjects import default_converter, numpy2ri, pandas2ri
 from rpy2.robjects.conversion import localconverter
@@ -23,6 +24,7 @@ class GAM:
         """
         self._gam = gam
         self.covariance_matrix: np.ndarray = _get_covariance_matrix(gam)
+        self.aic = _get_aic(gam)[0]
 
     def predict(
         self,
@@ -78,6 +80,14 @@ def _get_covariance_matrix(gam) -> np.ndarray:
         ro.globalenv["gam"] = gam
         covariance = ro.r("gam$Vp")
     return covariance
+
+
+def _get_aic(gam) -> int:
+    np_cv_rules = default_converter + numpy2ri.converter + pandas2ri.converter
+    with localconverter(np_cv_rules):
+        ro.globalenv["gam"] = gam
+        aic = ro.r("gam$aic")
+    return aic
 
 
 def _assign_pseudotimes(pseudotimes: np.ndarray):

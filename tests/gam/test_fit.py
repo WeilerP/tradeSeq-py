@@ -1,11 +1,13 @@
-import anndata as ad
-import numpy as np
 from hypothesis import given, settings
 from hypothesis import strategies as st
 
+import numpy as np
+
+import anndata as ad
+
 from tests.core.test_base import get_gam
 from tests.core.tradeseq_r import TradeseqR
-from tradeseq.gam._gam import GAM, _calculate_offset
+from tradeseq.gam._gam import _calculate_offset, GAM
 
 
 class TestGAMFitting:

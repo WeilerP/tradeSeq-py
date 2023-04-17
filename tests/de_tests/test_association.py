@@ -1,8 +1,9 @@
 from typing import Literal
 
-import numpy as np
 from hypothesis import given, settings
 from hypothesis import strategies as st
+
+import numpy as np
 
 from tests.core.test_base import get_gam
 from tradeseq.de_tests._association_test import AssociationTest
