@@ -205,7 +205,14 @@ def fit(
         """
         function(i){
             data = list(y = counts[,i])
-            res <- mgcv::gam(smooth, family=family, knots =knots, data = data)
+            suppressWarnings(try(withCallingHandlers({
+                res <- mgcv::gam(smooth, family=family, knots =knots, data = data)},
+                error = function(e){
+                    return(FALSE)
+                },
+                warning = function(w){
+                    # TODO: change a converged indicator
+                }), silent = TRUE))
             return(res)
         }
         """
