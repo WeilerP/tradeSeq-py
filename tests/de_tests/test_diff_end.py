@@ -69,8 +69,8 @@ class TestDiffEnd:
                         f"Gene_{gene_id} between lineages {lineage1} and {lineage2}",
                         "log fold change",
                     ],
-                    np.log(1 + lineage1 * difference)
-                    - np.log(1 + lineage2 * difference),
+                    np.log2(1 + lineage1 * difference)
+                    - np.log2(1 + lineage2 * difference),
                     atol=1e-4,
                 )
 
@@ -107,7 +107,7 @@ class TestDiffEnd:
         result = DiffEndTest(gam)(
             pairwise_test=True,
             global_test=True,
-            l2fc=np.abs(np.log(1) - np.log(3 * difference)),
+            l2fc=np.abs(np.log2(1) - np.log2(3 * difference)),
         )
 
         np.testing.assert_allclose(result["p value"], 1, atol=1e-4)

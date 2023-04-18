@@ -104,7 +104,7 @@ class WithinLineageTest(DifferentialExpressionTest):
                 gene_id, lineage_ids, pseudotimes_b, log_scale=True
             )
             pred_diff = pred_a - pred_b
-            pred_fc = pred_diff.copy()
+            pred_fc = pred_diff.copy() * np.log2(np.e)  # change basis to log2
             _fold_change_cutoff(pred_diff, l2fc)
 
             lpmatrix_a = self._model.get_lpmatrix(gene_id, lineage_ids, pseudotimes_a)
@@ -199,7 +199,9 @@ class BetweenLineageTest(DifferentialExpressionTest):
                 for (lineage_a, lineage_b) in combinations(lineages, 2)
             ]
 
-            fold_changes = [np.mean(pred) for pred in predictions_comb]
+            fold_changes = [
+                np.mean(pred) * np.log2(np.e) for pred in predictions_comb
+            ]  # change basis to log2 fold changes
 
             # apply fold change cut off
             for pred in predictions_comb:
@@ -296,6 +298,8 @@ def _wald_test(
 
 
 def _fold_change_cutoff(a: np.ndarray, l2fc: float = 0):
+    # change basis to natural logarithm
+    l2fc / np.log2(np.e)
     a[abs(a) < l2fc] = 0
 
 
