@@ -22,9 +22,17 @@ class GAM:
         gam
             rpy2 representation of fitted mgcv GAM object.
         """
-        self._gam = gam
-        self.covariance_matrix: np.ndarray = _get_covariance_matrix(gam)
-        self.aic = _get_aic(gam)[0]
+        if not gam:
+            self.fitted = False
+        else:
+            self.fitted = True
+            self._gam = gam
+            self.covariance_matrix: np.ndarray = _get_covariance_matrix(gam)
+            self.aic = _get_aic(gam)[0]
+
+    def _check_fitted(self):
+        if not self.fitted:
+            raise RuntimeError("MGCV raised an error for fitting this GAM.")
 
     def predict(
         self,
@@ -56,6 +64,7 @@ class GAM:
         A np.ndarray of shape (``n_predictions``,``n_variables``), the linear predictor matrix if return_type is
         "lpmatrix".
         """
+        self._check_fitted()
         n_lineages = lineage_assignment.shape[1]
         lineage_assignment = pd.DataFrame(
             data=lineage_assignment,
@@ -74,7 +83,8 @@ class GAM:
         return prediction
 
 
-def _get_covariance_matrix(gam) -> np.ndarray:
+def _get_covariance_matrix(gam: GAM) -> np.ndarray:
+    gam._check_fitted()
     np_cv_rules = default_converter + numpy2ri.converter + pandas2ri.converter
     with localconverter(np_cv_rules):
         ro.globalenv["gam"] = gam
@@ -82,7 +92,8 @@ def _get_covariance_matrix(gam) -> np.ndarray:
     return covariance
 
 
-def _get_aic(gam) -> int:
+def _get_aic(gam: GAM) -> int:
+    gam._check_fitted()
     np_cv_rules = default_converter + numpy2ri.converter + pandas2ri.converter
     with localconverter(np_cv_rules):
         ro.globalenv["gam"] = gam
