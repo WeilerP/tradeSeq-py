@@ -1,3 +1,4 @@
+import warnings
 from typing import List, Literal
 
 import numpy as np
@@ -32,8 +33,9 @@ class GAM:
             self.fitted = True
             self.converged = converged
             if not self.converged:
-                raise RuntimeWarning(
-                    "The fitting procedure for the GAM did not converge. Results might be off."
+                warnings.warn(
+                    "The fitting procedure for the GAM did not converge. Results might be off.",
+                    RuntimeWarning,
                 )
             self._gam = gam
             self.covariance_matrix: np.ndarray = _get_covariance_matrix(gam)
