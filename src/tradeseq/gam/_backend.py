@@ -14,23 +14,32 @@ stats = importr("stats")
 class GAM:
     """GAM backend class encapsulating R gam object."""
 
-    def __init__(self, gam):
+    def __init__(self, gam, converged: bool = True):
         """Initialize GAM object.
 
         Parmaeters
         ----------
         gam
-            rpy2 representation of fitted mgcv GAM object.
+            rpy2 representation of fitted mgcv GAM object. If no GAM could be fitted:
+            null or False can be given as parameter.
+        converged
+            Indicator whether the fitting procedure did converge.
         """
         if not gam:
             self.fitted = False
+            self.converged = False
         else:
             self.fitted = True
+            self.converged = converged
+            if not self.converged:
+                raise RuntimeWarning(
+                    "The fitting procedure for the GAM did not converge. Results might be off."
+                )
             self._gam = gam
             self.covariance_matrix: np.ndarray = _get_covariance_matrix(gam)
             self.aic = _get_aic(gam)[0]
 
-    def _check_fitted(self):
+    def check_fitted(self):
         if not self.fitted:
             raise RuntimeError("MGCV raised an error for fitting this GAM.")
 
@@ -64,7 +73,7 @@ class GAM:
         A np.ndarray of shape (``n_predictions``,``n_variables``), the linear predictor matrix if return_type is
         "lpmatrix".
         """
-        self._check_fitted()
+        self.check_fitted()
         n_lineages = lineage_assignment.shape[1]
         lineage_assignment = pd.DataFrame(
             data=lineage_assignment,
@@ -83,8 +92,7 @@ class GAM:
         return prediction
 
 
-def _get_covariance_matrix(gam: GAM) -> np.ndarray:
-    gam._check_fitted()
+def _get_covariance_matrix(gam) -> np.ndarray:
     np_cv_rules = default_converter + numpy2ri.converter + pandas2ri.converter
     with localconverter(np_cv_rules):
         ro.globalenv["gam"] = gam
@@ -92,8 +100,7 @@ def _get_covariance_matrix(gam: GAM) -> np.ndarray:
     return covariance
 
 
-def _get_aic(gam: GAM) -> int:
-    gam._check_fitted()
+def _get_aic(gam) -> int:
     np_cv_rules = default_converter + numpy2ri.converter + pandas2ri.converter
     with localconverter(np_cv_rules):
         ro.globalenv["gam"] = gam
@@ -174,7 +181,7 @@ def fit(
     Parameters
     ----------
     counts
-        A ``n_cell`` x ``n_lineage`` dense np.ndarry containing gene counts for every cell.
+        A ``n_cell`` x ``n_genes`` dense np.ndarry containing gene counts for every cell.
     pseudotimes
         A ``n_cells`` x ``n_lineage`` np.ndarray containing pseudotimes for every cell and lineage.
     w_sample
@@ -211,6 +218,9 @@ def fit(
     ro.globalenv["smooth"] = ro.Formula(smooth_form)
     ro.globalenv["knots"] = default_converter.py2rpy(knots.astype(float).tolist())
     ro.globalenv["family"] = default_converter.py2rpy(family)
+    ro.globalenv["converged"] = default_converter.py2rpy(
+        [True for i in range(counts.shape[1])]
+    )
     # TODO: error handling while fitting
     ro.globalenv["fit"] = ro.r(
         """
@@ -219,10 +229,11 @@ def fit(
             suppressWarnings(try(withCallingHandlers({
                 res <- mgcv::gam(smooth, family=family, knots =knots, data = data)},
                 error = function(e){
+                    converged[i] <<- FALSE
                     return(FALSE)
                 },
                 warning = function(w){
-                    # TODO: change a converged indicator
+                    converged[i] <<- FALSE
                 }), silent = TRUE))
             return(res)
         }
@@ -239,4 +250,7 @@ def fit(
         base = importr("base")
         res = base.lapply(list(range(1, counts.shape[1] + 1)), ro.globalenv["fit"])
     print(f"Finished fitting {counts.shape[1]} GAMs")
-    return [GAM(gam) for gam in res]
+    converged = [
+        conv[0] for conv in default_converter.rpy2py(ro.globalenv["converged"])
+    ]
+    return [GAM(gam, converged) for gam, converged in zip(res, converged)]

@@ -94,9 +94,8 @@ class TestGAMFitting:
         gam=get_gam(n_vars=2, min_obs=200, max_obs=300, n_lineages=1),
         n_knots=st.integers(min_value=4, max_value=4),
     )
-    @settings(max_examples=1, deadline=50000)
+    @settings(max_examples=10, deadline=50000)
     def test_random(self, gam: GAM, n_knots: int):
-        # TODO: scale different features by factor
         gam._adata.X = np.exp(
             np.repeat(
                 np.random.uniform(0, 10, gam._adata.n_obs)[:, np.newaxis],
@@ -111,5 +110,3 @@ class TestGAMFitting:
         gam._adata.obs["offset"] = np.ones(gam._adata.n_obs)
         gam._offset_key = "offset"
         gam.fit(n_knots=n_knots)
-
-        pass
