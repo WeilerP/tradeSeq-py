@@ -309,8 +309,8 @@ def _wald_test(
 
 def _fold_change_cutoff(a: np.ndarray, l2fc: float = 0):
     # change basis to natural logarithm
-    l2fc = l2fc / np.log2(np.e)
-    a[abs(a) < l2fc] = 0
+    fold_change_cutoff = l2fc / np.log2(np.e)
+    a[abs(a) < fold_change_cutoff] = 0
 
 
 def _linearly_independent_rows(a: np.ndarray) -> np.ndarray:
