@@ -15,6 +15,7 @@ class AssociationTest(WithinLineageTest):
         contrast_type: Literal["start", "end", "consecutive"] = "consecutive",
         lineage_test: bool = False,
         global_test: bool = True,
+        l2fc: float = 0,
     ) -> pd.DataFrame:
         """Perform AssociationTest.
 
@@ -35,10 +36,12 @@ class AssociationTest(WithinLineageTest):
             Boolean indicating whether a test should be performed per lineage (independent of other lineages).
         global_test
             Boolean indicating whether a global_test should be performed (across all lineages).
+        l2fc
+            Log2 fold change cut off.
 
         Returns
         -------
-        A Pandas DataFrame containing the Wald statistic, the degrees of freedom and the p-value
+        A Pandas DataFrame containing the Wald statistic, the degrees of freedom, the p-value and the mean fold change
         for each gene for each lineage (if ``lineage_test=True``) and/or globally.
         """
         start = self._get_start_pseudotime()
@@ -80,5 +83,5 @@ class AssociationTest(WithinLineageTest):
             )
 
         return self._test(
-            pseudotimes_a, pseudotimes_b, lineages, lineage_test, global_test
+            pseudotimes_a, pseudotimes_b, lineages, lineage_test, global_test, l2fc
         )

@@ -19,6 +19,7 @@ class StartVsEndTest(WithinLineageTest):
         end: Union[None, float, np.ndarray] = None,
         lineage_test: bool = False,
         global_test: bool = True,
+        l2fc: float = 0,
     ) -> pd.DataFrame:
         """Perform StartVsEndTest.
 
@@ -36,10 +37,12 @@ class StartVsEndTest(WithinLineageTest):
             Boolean indicating whether a test should be performed per lineage (independent of other lineages).
         global_test
             Boolean indicating whether a global_test should be performed (across all lineages).
+        l2fc
+            Log2 fold change cut off.
 
         Returns
         -------
-        A Pandas DataFrame containing the Wald statistic, the degrees of freedom and the p-value
+        A Pandas DataFrame containing the Wald statistic, the degrees of freedom, the p-value and the (mean) fold change
         for each gene for each lineage (if ``lineage_test=True``) and/or globally.
         """
         if start is None:
@@ -58,4 +61,5 @@ class StartVsEndTest(WithinLineageTest):
             lineage_assignment,
             lineage_test,
             global_test,
+            l2fc,
         )
