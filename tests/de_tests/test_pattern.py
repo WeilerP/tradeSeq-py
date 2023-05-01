@@ -26,6 +26,7 @@ class TestPattern:
         gam.fit(n_knots=n_knots)
 
         result = PatternTest(gam)(pairwise_test=True, global_test=True)
+        result = result.swaplevel(axis=1)
 
         np.testing.assert_allclose(result["p value"], 1)
 
@@ -57,5 +58,6 @@ class TestPattern:
         gam.fit(n_knots=n_knots)
 
         result = PatternTest(gam)(pairwise_test=True, global_test=True)
+        result = result.swaplevel(axis=1)
 
         np.testing.assert_allclose(result["p value"], 0, atol=1e-8)

@@ -26,7 +26,7 @@ class TestStartVsEnd:
         gam.fit(n_knots=n_knots)
 
         result = StartVsEndTest(gam)(0, 5, global_test=True, lineage_test=True)
-
+        result = result.swaplevel(axis=1)
         np.testing.assert_allclose(result["p value"], 1)
         np.testing.assert_allclose(result["log fold change"], 0, atol=1e-7)
 
@@ -35,7 +35,7 @@ class TestStartVsEnd:
         difference=st.floats(10, 100),
         n_knots=st.integers(min_value=2, max_value=4),
     )
-    @settings(max_examples=1, deadline=50000)
+    @settings(max_examples=10, deadline=50000)
     def test_linear(self, gam: GAM, difference: float, n_knots: int):
         gam._adata.X = np.repeat(
             np.linspace(0, difference, gam._adata.n_obs)[:, np.newaxis],
@@ -51,6 +51,7 @@ class TestStartVsEnd:
         gam.fit(n_knots=n_knots)
 
         result = StartVsEndTest(gam)(0, 5, global_test=True, lineage_test=True)
+        result = result.swaplevel(axis=1)
 
         np.testing.assert_allclose(result["p value"], 0, atol=1e-5)
         np.testing.assert_allclose(
@@ -84,6 +85,7 @@ class TestStartVsEnd:
             lineage_test=True,
             l2fc=abs(np.log2(0.01) - np.log2(difference)) + 0.5,
         )
+        result = result.swaplevel(axis=1)
 
         np.testing.assert_allclose(result["p value"], 1, atol=1e-5)
         np.testing.assert_allclose(
