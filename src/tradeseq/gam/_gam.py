@@ -200,11 +200,11 @@ class GAM:
         return [np.nan if not model.fitted else model.aic for model in self._model]
 
     def get_fitted_indices(self) -> List[int]:
-        """Find indices of genes for which fitting of the corresponding GAM converged.
+        """Find indices of genes for which fitting of the corresponding GAM worked.
 
         Returns
         -------
-        List of indices of genes for which fitting converged.
+        List of indices of genes for which fitting worked.
         """
         self.check_is_fitted()
         return [ind for ind, gam in enumerate(self._model) if gam.fitted]
