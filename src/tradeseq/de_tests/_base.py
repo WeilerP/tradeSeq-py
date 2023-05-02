@@ -91,7 +91,8 @@ class WithinLineageTest(DifferentialExpressionTest):
         pseudotimes_a = np.concatenate(pseudotimes_a)
         pseudotimes_b = np.concatenate(pseudotimes_b)
 
-        for gene_id, gene_name in enumerate(self._model._genes):
+        for gene_id in self._model.get_fitted_indices():
+            gene_name = self._model._genes[gene_id]
             sigma = self._model.get_covariance(gene_id)
 
             pred_a = self._model.predict(
@@ -164,7 +165,8 @@ class BetweenLineageTest(DifferentialExpressionTest):
         )
         pseudotimes = np.concatenate(pseudotimes)
 
-        for gene_id, gene_name in enumerate(self._model._genes):
+        for gene_id in self._model.get_fitted_indices():
+            gene_name = self._model._genes[gene_id]
             sigma = self._model.get_covariance(gene_id)
 
             predictions = self._model.predict(
@@ -206,7 +208,6 @@ class BetweenLineageTest(DifferentialExpressionTest):
         )
 
 
-# TODO: add different methods to compute the inverse
 def _wald_test(
     prediction: np.ndarray,
     contrast: np.ndarray,

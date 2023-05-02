@@ -43,7 +43,7 @@ class GAM:
 
     def check_fitted(self):
         if not self.fitted:
-            raise RuntimeError("MGCV raised an error for fitting this GAM.")
+            raise RuntimeError("This GAM could not be fitted by mgcv.")
 
     def predict(
         self,
