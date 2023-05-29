@@ -255,9 +255,9 @@ class GAM:
         times_fitted = []
         counts_fitted = []
         for id in lineage_id:
-            cell_mask = self._lineage_assignment[:, id] == 1
-            times_fitted.append(self._get_pseudotime()[cell_mask, id])
-            counts_fitted.append(self._get_counts()[0][cell_mask, var_id])
+            obs_mask = self._lineage_assignment[:, id] == 1
+            times_fitted.append(self._get_pseudotime()[obs_mask, id])
+            counts_fitted.append(self._get_counts()[0][obs_mask, var_id])
 
         times_pred = []
         counts_pred = []
