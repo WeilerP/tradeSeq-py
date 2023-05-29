@@ -46,7 +46,7 @@ class PatternTest(BetweenLineageTest):
 
         Returns
         -------
-        A (multi index) Pandas ``DataFrame`` containing the Wald statistic, the degrees of freedom, the p-value and the mean log2 fold change
+        A (multi-index) Pandas ``DataFrame`` containing the Wald statistic, the degrees of freedom, the p-value and the mean log2 fold change
         for each gene for each pair of lineages (if ``pairwise_test=True``) and/or globally (if ``global_test=True``).
         """
         n_lineages = self._model._n_lineages

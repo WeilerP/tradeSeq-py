@@ -41,7 +41,7 @@ class AssociationTest(WithinLineageTest):
 
         Returns
         -------
-        A (multi index) Pandas DataFrame containing the Wald statistic, the degrees of freedom, the p-value and the mean fold change
+        A (multi-index) Pandas DataFrame containing the Wald statistic, the degrees of freedom, the p-value and the mean fold change
         for each gene for each lineage (if ``lineage_test=True``) and/or globally.
         """
         start = self._get_start_pseudotime()

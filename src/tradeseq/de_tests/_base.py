@@ -81,7 +81,7 @@ class WithinLineageTest(DifferentialExpressionTest):
 
         Returns
         -------
-        A (multi index) Pandas DataFrame containing the Wald statistic, the degrees of freedom, the p-value and the mean log fold change
+        A (multi-index) Pandas DataFrame containing the Wald statistic, the degrees of freedom, the p-value and the mean log fold change
         for each gene for each lineage (if ``lineage_test=True``) and/or globally.
         """
         result = defaultdict(dict)
@@ -173,7 +173,7 @@ class BetweenLineageTest(DifferentialExpressionTest):
 
         Returns
         -------
-        A (multi index) Pandas DataFrame containing the Wald statistic, the degrees of freedom, the p-value and the mean log fold change
+        A (multi-index) Pandas DataFrame containing the Wald statistic, the degrees of freedom, the p-value and the mean log fold change
         for each gene for each pair of lineages (if ``pairwise_test``) and/or globally (if ``global_test``).
         """
         result = defaultdict(dict)
