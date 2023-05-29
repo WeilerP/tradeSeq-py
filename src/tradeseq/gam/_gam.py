@@ -76,7 +76,7 @@ class GAM:
     # TODO: change so that list of gene_ids or gene_names are accepted
     def predict(
         self,
-        gene_id: int,
+        var_id: int,
         lineage_assignment: np.ndarray,
         pseudotimes: np.ndarray,
         log_scale: bool = False,
@@ -85,7 +85,7 @@ class GAM:
 
         Parameters
         ----------
-        gene_id
+        var_id
             Index of the gene for which prediction is made.
         lineage_assignment
             A (``n_predictions``,) np.ndarray where each integer entry indicates the lineage index for the prediction point.
@@ -124,18 +124,18 @@ class GAM:
         else:
             return_type = "response"
 
-        return self._model[gene_id].predict(
+        return self._model[var_id].predict(
             lineage_indicator, pseudotimes, offsets, return_type
         )
 
     def get_lpmatrix(
-        self, gene_id: int, lineage_assignment: np.ndarray, pseudotimes: np.ndarray
+        self, var_id: int, lineage_assignment: np.ndarray, pseudotimes: np.ndarray
     ) -> np.ndarray:
         """Return linear predictor matrix of the GAM for the given gene with the given parameters.
 
         Parameters
         ----------
-        gene_id
+        var_id
             Index of the gene for which the lpmatrix is returned.
         lineage_assignment
             A (``n_predictions``,) np.ndarray where each integer entry indicates the lineage index for the prediction point.
@@ -167,16 +167,16 @@ class GAM:
         # offsets are just mean offsets of fitted data
         offsets = np.repeat(self._offset.mean(), n_predictions)
 
-        return self._model[gene_id].predict(
+        return self._model[var_id].predict(
             lineage_indicator, pseudotimes, offsets, "lpmatrix"
         )
 
-    def get_covariance(self, gene_id: int) -> np.ndarray:
+    def get_covariance(self, var_id: int) -> np.ndarray:
         """Return covariance matrix of the parameters fitted for the GAM for the given gene.
 
         Parameters
         ----------
-        gene_id
+        var_id
             Index of the gene for which the covariance matrix of the parameters of the GAM are returned.
 
         Returns
@@ -184,9 +184,9 @@ class GAM:
         A (``n_parameters``,``n_parameters``) np.ndarray, the covariance matrix.
         """
         self.check_is_fitted()
-        self._model[gene_id].check_fitted()
+        self._model[var_id].check_fitted()
 
-        return self._model[gene_id].covariance_matrix
+        return self._model[var_id].covariance_matrix
 
     def get_aic(self) -> List[float]:
         """Get Akaike information criterion (AIC) for each fitted GAM.
@@ -211,7 +211,7 @@ class GAM:
 
     def plot(
         self,
-        gene_id: int,
+        var_id: int,
         lineage_id: Optional[Union[List[int], int]] = None,
         resolution: int = 200,
         knot_locations: bool = True,
@@ -225,7 +225,7 @@ class GAM:
 
         Parameters
         ----------
-        gene_id
+        var_id
             Index of the gene that should be plotted.
         lineage_id
             Indices of plotted lineages. Can be a list or an int if only a single lineage should be plotted.
@@ -257,7 +257,7 @@ class GAM:
         for id in lineage_id:
             cell_mask = self._lineage_assignment[:, id] == 1
             times_fitted.append(self._get_pseudotime()[cell_mask, id])
-            counts_fitted.append(self._get_counts()[0][cell_mask, gene_id])
+            counts_fitted.append(self._get_counts()[0][cell_mask, var_id])
 
         times_pred = []
         counts_pred = []
@@ -272,7 +272,7 @@ class GAM:
             )  # assign every prediction point to lineage with lineage id: id
 
             counts_pred.append(
-                self.predict(gene_id, lineage_pred, equally_spaced, log_scale=False)
+                self.predict(var_id, lineage_pred, equally_spaced, log_scale=False)
             )
 
         for times, counts in zip(times_fitted, counts_fitted):

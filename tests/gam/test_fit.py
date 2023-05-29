@@ -53,7 +53,7 @@ class TestGAMFitting:
         lineage_assignment = np.zeros((n_predictions,), dtype=int)
         pseudotime = np.linspace(0.0, 5, n_predictions)
         prediction = gam.predict(
-            gene_id=0, lineage_assignment=lineage_assignment, pseudotimes=pseudotime
+            var_id=0, lineage_assignment=lineage_assignment, pseudotimes=pseudotime
         )
         assert np.allclose(prediction, constant)
 
@@ -83,7 +83,7 @@ class TestGAMFitting:
         lineage_assignment = np.zeros((n_predictions,), dtype=int)
         pseudotime = np.linspace(1.0, 2, n_predictions)
         prediction = gam.predict(
-            gene_id=0,
+            var_id=0,
             lineage_assignment=lineage_assignment,
             pseudotimes=pseudotime,
             log_scale=True,

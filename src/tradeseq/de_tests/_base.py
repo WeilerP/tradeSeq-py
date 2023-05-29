@@ -95,22 +95,22 @@ class WithinLineageTest(DifferentialExpressionTest):
         pseudotimes_a = np.concatenate(pseudotimes_a)
         pseudotimes_b = np.concatenate(pseudotimes_b)
 
-        for gene_id in self._model.get_fitted_indices():
-            gene_name = self._model._genes[gene_id]
-            sigma = self._model.get_covariance(gene_id)
+        for var_id in self._model.get_fitted_indices():
+            gene_name = self._model._genes[var_id]
+            sigma = self._model.get_covariance(var_id)
 
             pred_a = self._model.predict(
-                gene_id, lineage_ids, pseudotimes_a, log_scale=True
+                var_id, lineage_ids, pseudotimes_a, log_scale=True
             )
             pred_b = self._model.predict(
-                gene_id, lineage_ids, pseudotimes_b, log_scale=True
+                var_id, lineage_ids, pseudotimes_b, log_scale=True
             )
             pred_diff = pred_a - pred_b
             pred_fold_change = pred_diff.copy() * np.log2(np.e)  # change basis to log2
             _fold_change_cutoff(pred_diff, l2fc)
 
-            lpmatrix_a = self._model.get_lpmatrix(gene_id, lineage_ids, pseudotimes_a)
-            lpmatrix_b = self._model.get_lpmatrix(gene_id, lineage_ids, pseudotimes_b)
+            lpmatrix_a = self._model.get_lpmatrix(var_id, lineage_ids, pseudotimes_a)
+            lpmatrix_b = self._model.get_lpmatrix(var_id, lineage_ids, pseudotimes_b)
             lpmatrix_diff = lpmatrix_a - lpmatrix_b
 
             if lineage_test:
@@ -186,14 +186,14 @@ class BetweenLineageTest(DifferentialExpressionTest):
         )
         pseudotimes = np.concatenate(pseudotimes)
 
-        for gene_id in self._model.get_fitted_indices():
-            gene_name = self._model._genes[gene_id]
-            sigma = self._model.get_covariance(gene_id)
+        for var_id in self._model.get_fitted_indices():
+            gene_name = self._model._genes[var_id]
+            sigma = self._model.get_covariance(var_id)
 
             predictions = self._model.predict(
-                gene_id, lineage_ids, pseudotimes, log_scale=True
+                var_id, lineage_ids, pseudotimes, log_scale=True
             )
-            lpmatrix = self._model.get_lpmatrix(gene_id, lineage_ids, pseudotimes)
+            lpmatrix = self._model.get_lpmatrix(var_id, lineage_ids, pseudotimes)
 
             predictions_comb = [
                 predictions[lineage_ids == lineage_a]
