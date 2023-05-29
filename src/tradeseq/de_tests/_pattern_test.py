@@ -27,10 +27,10 @@ class PatternTest(BetweenLineageTest):
         ----------
         start_times
             Pseudo time starting from which lineage should be compared to other lineages. Either a np.ndarray of shape
-            (``_lineages``,) specifying individual start times for all lineages or a float specifying the same start
+            (``n_lineages``,) specifying individual start times for all lineages or a float specifying the same start
             time for all lineages.
         end_times
-            End pseudotime for comparison. Either a np.ndarray of shape (``_lineages``,)
+            End pseudotime for comparison. Either a np.ndarray of shape (``n_lineages``,)
             specifying individual end times for all lineages or a float specifying the same end time for all lineages.
         n_points
             Number of equally spaced time points between start_times and end_times at which to compare the lineages.

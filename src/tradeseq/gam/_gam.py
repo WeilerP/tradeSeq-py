@@ -719,7 +719,7 @@ def _check_obs_weights(obs_weights: np.ndarray) -> bool:
     ----------
     __________
     obs_weights:
-        Array of shape ``n_obs`` x ``_lineages`` containing cell to lineage weights.
+        Array of shape ``n_obs`` x ``n_lineages`` containing cell to lineage weights.
 
     Returns
     -------
