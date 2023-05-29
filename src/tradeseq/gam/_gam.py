@@ -466,7 +466,7 @@ class GAM:
 
         Returns
         -------
-            A ``n_cells`` x ``n_lineage`` np.ndarray where each row contains exactly one 1 (the assigned lineage)
+            A ``n_obs`` x ``n_lineage`` np.ndarray where each row contains exactly one 1 (the assigned lineage)
             and 0 everywhere else and a list of lineage names.
         """
         obs_weights, lineage_names = self._get_lineage()
@@ -719,7 +719,7 @@ def _check_obs_weights(obs_weights: np.ndarray) -> bool:
     ----------
     __________
     obs_weights:
-        Array of shape ``n_cells`` x ``_lineages`` containing cell to lineage weights.
+        Array of shape ``n_obs`` x ``_lineages`` containing cell to lineage weights.
 
     Returns
     -------
