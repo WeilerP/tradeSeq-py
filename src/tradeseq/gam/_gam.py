@@ -73,7 +73,7 @@ class GAM:
         self._offset_key = offset_key
         self._layer_key = layer_key
 
-    # TODO: change so that list of gene_ids or gene_names are accepted
+    # TODO: change so that list of var_ids or var_names are accepted
     def predict(
         self,
         var_id: int,
