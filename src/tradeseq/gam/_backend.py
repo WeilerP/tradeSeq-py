@@ -183,7 +183,7 @@ def fit(
     Parameters
     ----------
     counts
-        A ``n_obs`` x ``n_genes`` dense np.ndarry containing gene counts for every cell.
+        A ``n_obs`` x ``n_vars`` dense np.ndarry containing gene counts for every cell.
     pseudotimes
         A ``n_obs`` x ``n_lineage`` np.ndarray containing pseudotimes for every cell and lineage.
     w_sample
