@@ -503,7 +503,7 @@ class GAM:
 
         Returns
         -------
-            A ``n_cell`` x ``n_lineage`` dense np.ndarry containing gene counts for every cell and a list containing the
+            A ``n_obs`` x ``n_lineage`` dense np.ndarry containing gene counts for every cell and a list containing the
             gene names.
         """
         # TODO: maybe add support for gene subsets?
@@ -738,11 +738,11 @@ def _calculate_offset(counts: np.ndarray) -> np.ndarray:
     Parameters
     ----------
     counts
-        A ``n_cell`` x ``n_lineage`` np.ndarray containing gene counts for every cell
+        A ``n_obs`` x ``n_lineage`` np.ndarray containing gene counts for every cell
 
     Returns
     -------
-    An np.ndarray of shape (``n_cell``,) containing an offset for each cell.
+    An np.ndarray of shape (``n_obs``,) containing an offset for each cell.
     """
     norm_factors = tmm_norm_factors(counts.T)
     library_size = counts.sum(axis=1) * norm_factors.flatten()
