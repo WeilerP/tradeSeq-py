@@ -469,16 +469,16 @@ class GAM:
             A ``n_cells`` x ``n_lineage`` np.ndarray where each row contains exactly one 1 (the assigned lineage)
             and 0 everywhere else and a list of lineage names.
         """
-        cell_weights, lineage_names = self._get_lineage()
-        if not _check_cell_weights(cell_weights):
+        obs_weights, lineage_names = self._get_lineage()
+        if not _check_obs_weights(obs_weights):
             raise ValueError(
                 "Cell weights have to be non-negative and cells need to have at least one positive cell weight"
             )
 
-        def sample_lineage(cell_weights_row):
-            return np.random.multinomial(1, cell_weights_row / np.sum(cell_weights_row))
+        def sample_lineage(obs_weights_row):
+            return np.random.multinomial(1, obs_weights_row / np.sum(obs_weights_row))
 
-        lineage_assignment = np.apply_along_axis(sample_lineage, 1, cell_weights)
+        lineage_assignment = np.apply_along_axis(sample_lineage, 1, obs_weights)
 
         if any(lineage_assignment.sum(axis=0) == 0):
             lineage_name = np.array(lineage_names)[lineage_assignment.sum(axis=0) == 0][
@@ -712,13 +712,13 @@ def _indices_to_indicator_matrix(indices: np.ndarray, n_indices: int):
     return (indices.reshape(-1, 1) == list(range(n_indices))).astype(int)
 
 
-def _check_cell_weights(cell_weights: np.ndarray) -> bool:
+def _check_obs_weights(obs_weights: np.ndarray) -> bool:
     """Check if all cell weights are non-negative and if every cell has at least one positive cell weight.
 
     Parameters
     ----------
     __________
-    cell_weights:
+    obs_weights:
         Array of shape ``n_cells`` x ``_lineages`` containing cell to lineage weights.
 
     Returns
@@ -727,7 +727,7 @@ def _check_cell_weights(cell_weights: np.ndarray) -> bool:
         Boolean indicating whether all cell weights are non-negative and if every cell has at least one positive
         cell weight.
     """
-    return (cell_weights >= 0).all() and (np.sum(cell_weights, axis=1) > 0).all()
+    return (obs_weights >= 0).all() and (np.sum(obs_weights, axis=1) > 0).all()
 
 
 def _calculate_offset(counts: np.ndarray) -> np.ndarray:
