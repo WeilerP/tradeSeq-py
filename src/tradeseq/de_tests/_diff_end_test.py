@@ -22,7 +22,7 @@ class DiffEndTest(BetweenLineageTest):
 
         Returns
         -------
-        A Pandas DataFrame containing the Wald statistic, the degrees of freedom, the p-value and the mean log2 fold change
+        A (multi-index) Pandas DataFrame containing the Wald statistic, the degrees of freedom, the p-value and the mean log2 fold change
         for each gene for each pair of lineages (if ``pairwise_test=True``) and/or globally (if ``global_test=True``).
         """
         end_pseudotimes = [np.array([end]) for end in self._get_end_pseudotime()]

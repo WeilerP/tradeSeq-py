@@ -40,6 +40,7 @@ class TestAssociation:
             lineage_test=True,
             global_test=True,
         )
+        result = result.swaplevel(axis=1)
 
         np.testing.assert_allclose(result["p value"], 1)
         np.testing.assert_allclose(result["log fold change"], 0, atol=1e-5)
@@ -77,5 +78,6 @@ class TestAssociation:
             lineage_test=True,
             global_test=True,
         )
+        result = result.swaplevel(axis=1)
 
         np.testing.assert_allclose(result["p value"], 0, atol=1e-5)

@@ -1,4 +1,5 @@
 from abc import ABC, abstractmethod
+from collections import defaultdict
 from itertools import combinations
 from typing import List, Literal, Union
 
@@ -80,10 +81,10 @@ class WithinLineageTest(DifferentialExpressionTest):
 
         Returns
         -------
-        A Pandas DataFrame containing the Wald statistic, the degrees of freedom, the p-value and the mean log fold change
+        A (multi-index) Pandas DataFrame containing the Wald statistic, the degrees of freedom, the p-value and the mean log fold change
         for each gene for each lineage (if ``lineage_test=True``) and/or globally.
         """
-        result = {}
+        result = defaultdict(dict)
         lineage_ids = np.array(
             [
                 lineage_ind
@@ -121,7 +122,7 @@ class WithinLineageTest(DifferentialExpressionTest):
                         lpmatrix_diff[lineage_ids == lineage],
                         sigma,
                     )
-                    result[f"{gene_name} in lineage {lineage_name}"] = (
+                    result[lineage_name][gene_name] = (
                         wald_stat,
                         df,
                         p_value,
@@ -131,22 +132,16 @@ class WithinLineageTest(DifferentialExpressionTest):
             if global_test:
                 global_fold_change = np.mean(pred_fold_change)
                 wald_stat, df, p_value = _wald_test(pred_diff, lpmatrix_diff, sigma)
-                result[f"{gene_name} globally"] = (
+                result["globally"][gene_name] = (
                     wald_stat,
                     df,
                     p_value,
                     global_fold_change,
                 )
 
-        return pd.DataFrame.from_dict(
+        return _create_multi_index_data_frame(
             result,
-            orient="index",
-            columns=[
-                "wald statistic",
-                "degrees of freedom",
-                "p value",
-                "log fold change",
-            ],
+            ["wald statistic", "degrees of freedom", "p value", "log fold change"],
         )
 
 
@@ -178,10 +173,10 @@ class BetweenLineageTest(DifferentialExpressionTest):
 
         Returns
         -------
-        A Pandas DataFrame containing the Wald statistic, the degrees of freedom, the p-value and the mean log fold change
+        A (multi-index) Pandas DataFrame containing the Wald statistic, the degrees of freedom, the p-value and the mean log fold change
         for each gene for each pair of lineages (if ``pairwise_test``) and/or globally (if ``global_test``).
         """
-        result = {}
+        result = defaultdict(dict)
         lineage_ids = np.array(
             [
                 lineage_ind
@@ -235,31 +230,34 @@ class BetweenLineageTest(DifferentialExpressionTest):
                         prediction_diff, lpmatrix_diff, sigma
                     )
                     result[
-                        f"{gene_name} between lineages {self._model.lineage_names[lineage_a]} and {self._model.lineage_names[lineage_b]}"
-                    ] = (wald_stat, df, p_value, fold_change)
+                        f"between {self._model.lineage_names[lineage_a]} and {self._model.lineage_names[lineage_b]}"
+                    ][gene_name] = (wald_stat, df, p_value, fold_change)
 
             if global_test:
                 pred = np.concatenate(predictions_comb)
                 lpmatrix = np.concatenate(lpmatrices_comb, axis=0)
                 wald_stat, df, p_value = _wald_test(pred, lpmatrix, sigma)
                 global_fold_change = np.mean(fold_changes)
-                result[f"{gene_name} globally"] = (
+                result["globally"][gene_name] = (
                     wald_stat,
                     df,
                     p_value,
                     global_fold_change,
                 )
 
-        return pd.DataFrame.from_dict(
+        return _create_multi_index_data_frame(
             result,
-            orient="index",
-            columns=[
-                "wald statistic",
-                "degrees of freedom",
-                "p value",
-                "log fold change",
-            ],
+            ["wald statistic", "degrees of freedom", "p value", "log fold change"],
         )
+
+
+def _create_multi_index_data_frame(df_dict: dict, columns):
+    result_dfs = {}
+    for test_type in df_dict.keys():
+        result_dfs[test_type] = pd.DataFrame.from_dict(
+            df_dict[test_type], orient="index", columns=columns
+        )
+    return pd.concat(result_dfs.values(), axis=1, keys=result_dfs.keys())
 
 
 def _wald_test(

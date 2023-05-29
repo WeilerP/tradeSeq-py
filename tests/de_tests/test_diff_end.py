@@ -28,6 +28,7 @@ class TestDiffEnd:
         gam.fit(n_knots=n_knots)
 
         result = DiffEndTest(gam)(pairwise_test=True, global_test=True)
+        result = result.swaplevel(axis=1)
 
         np.testing.assert_allclose(result["p value"], 1)
         np.testing.assert_allclose(result["log fold change"], 0, atol=1e-7)
@@ -61,18 +62,15 @@ class TestDiffEnd:
 
         result = DiffEndTest(gam)(pairwise_test=True, global_test=True)
 
+        for lineage1, lineage2 in combinations(range(n_lineages), 2):
+            np.testing.assert_allclose(
+                result[f"between {lineage1} and {lineage2}"]["log fold change"],
+                np.log2(1 + lineage1 * difference) - np.log2(1 + lineage2 * difference),
+                atol=1e-4,
+            )
+
+        result = result.swaplevel(axis=1)
         np.testing.assert_allclose(result["p value"], 0, atol=1e-4)
-        for gene_id in range(gam._adata.n_vars):
-            for lineage1, lineage2 in combinations(range(n_lineages), 2):
-                np.testing.assert_allclose(
-                    result.at[
-                        f"Gene_{gene_id} between lineages {lineage1} and {lineage2}",
-                        "log fold change",
-                    ],
-                    np.log2(1 + lineage1 * difference)
-                    - np.log2(1 + lineage2 * difference),
-                    atol=1e-4,
-                )
 
     # TODO: test with one lineage constantly at 0 (failed for me for some reason)
 
@@ -109,5 +107,6 @@ class TestDiffEnd:
             global_test=True,
             l2fc=np.abs(np.log2(1) - np.log2(3 * difference)),
         )
+        result = result.swaplevel(axis=1)
 
         np.testing.assert_allclose(result["p value"], 1, atol=1e-4)
