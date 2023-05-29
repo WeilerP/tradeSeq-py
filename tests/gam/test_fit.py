@@ -89,3 +89,24 @@ class TestGAMFitting:
             log_scale=True,
         )
         assert np.allclose(prediction, pseudotime)
+
+    @given(
+        gam=get_gam(n_vars=2, min_obs=200, max_obs=300, n_lineages=1),
+        n_knots=st.integers(min_value=4, max_value=4),
+    )
+    @settings(max_examples=10, deadline=50000)
+    def test_random(self, gam: GAM, n_knots: int):
+        gam._adata.X = np.exp(
+            np.repeat(
+                np.random.uniform(0, 10, gam._adata.n_obs)[:, np.newaxis],
+                gam._adata.n_vars,
+                axis=1,
+            )
+        )
+        gam._adata.obs[gam._time_key] = np.linspace(1, 5, gam._adata.n_obs)
+        del gam._adata.obsm[gam._time_key]
+        weights = np.ones((gam._adata.n_obs, gam._n_lineages))
+        gam._adata.obsm[gam._weights_key] = weights
+        gam._adata.obs["offset"] = np.ones(gam._adata.n_obs)
+        gam._offset_key = "offset"
+        gam.fit(n_knots=n_knots)

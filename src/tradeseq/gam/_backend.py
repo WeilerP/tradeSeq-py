@@ -1,3 +1,4 @@
+import warnings
 from typing import List, Literal
 
 import numpy as np
@@ -14,17 +15,35 @@ stats = importr("stats")
 class GAM:
     """GAM backend class encapsulating R gam object."""
 
-    def __init__(self, gam):
+    def __init__(self, gam, converged: bool = True):
         """Initialize GAM object.
 
         Parmaeters
         ----------
         gam
-            rpy2 representation of fitted mgcv GAM object.
+            rpy2 representation of fitted mgcv GAM object. If no GAM could be fitted:
+            null or False can be given as parameter.
+        converged
+            Indicator whether the fitting procedure did converge.
         """
-        self._gam = gam
-        self.covariance_matrix: np.ndarray = _get_covariance_matrix(gam)
-        self.aic = _get_aic(gam)[0]
+        if not gam:
+            self.fitted = False
+            self.converged = False
+        else:
+            self.fitted = True
+            self.converged = converged
+            if not self.converged:
+                warnings.warn(
+                    "The fitting procedure for the GAM did not converge. Results might be off.",
+                    RuntimeWarning,
+                )
+            self._gam = gam
+            self.covariance_matrix: np.ndarray = _get_covariance_matrix(gam)
+            self.aic = _get_aic(gam)[0]
+
+    def check_fitted(self):
+        if not self.fitted:
+            raise RuntimeError("This GAM could not be fitted by mgcv.")
 
     def predict(
         self,
@@ -56,6 +75,7 @@ class GAM:
         A np.ndarray of shape (``n_predictions``,``n_variables``), the linear predictor matrix if return_type is
         "lpmatrix".
         """
+        self.check_fitted()
         n_lineages = lineage_assignment.shape[1]
         lineage_assignment = pd.DataFrame(
             data=lineage_assignment,
@@ -163,7 +183,7 @@ def fit(
     Parameters
     ----------
     counts
-        A ``n_cell`` x ``n_lineage`` dense np.ndarry containing gene counts for every cell.
+        A ``n_cell`` x ``n_genes`` dense np.ndarry containing gene counts for every cell.
     pseudotimes
         A ``n_cells`` x ``n_lineage`` np.ndarray containing pseudotimes for every cell and lineage.
     w_sample
@@ -200,12 +220,23 @@ def fit(
     ro.globalenv["smooth"] = ro.Formula(smooth_form)
     ro.globalenv["knots"] = default_converter.py2rpy(knots.astype(float).tolist())
     ro.globalenv["family"] = default_converter.py2rpy(family)
+    ro.globalenv["converged"] = default_converter.py2rpy(
+        [True for i in range(counts.shape[1])]
+    )
     # TODO: error handling while fitting
     ro.globalenv["fit"] = ro.r(
         """
         function(i){
             data = list(y = counts[,i])
-            res <- mgcv::gam(smooth, family=family, knots =knots, data = data)
+            suppressWarnings(try(withCallingHandlers({
+                res <- mgcv::gam(smooth, family=family, knots =knots, data = data)},
+                error = function(e){
+                    converged[i] <<- FALSE
+                    return(FALSE)
+                },
+                warning = function(w){
+                    converged[i] <<- FALSE
+                }), silent = TRUE))
             return(res)
         }
         """
@@ -221,4 +252,7 @@ def fit(
         base = importr("base")
         res = base.lapply(list(range(1, counts.shape[1] + 1)), ro.globalenv["fit"])
     print(f"Finished fitting {counts.shape[1]} GAMs")
-    return [GAM(gam) for gam in res]
+    converged = [
+        conv[0] for conv in default_converter.rpy2py(ro.globalenv["converged"])
+    ]
+    return [GAM(gam, converged) for gam, converged in zip(res, converged)]
