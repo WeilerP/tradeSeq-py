@@ -216,6 +216,9 @@ class GAM:
         resolution: int = 200,
         knot_locations: bool = True,
         log_scale: bool = False,
+        alpha: float = 1,
+        marker_size: float = 5,
+        sample: float = 1,
         x_label: str = "pseudotime",
         y_label: str = "gene expression",
     ):
@@ -234,6 +237,13 @@ class GAM:
             Boolean indicating whether knot locations should be plotted as dashed vertical lines.
         log_scale
             Boolean indicating whether counts and smoothers should be plotted in log1p scale.
+        alpha
+            Float between 0 (transparent) and 1 (opaque) determining the transparency of the scatter points.
+        marker_size
+            Size (in points**2) of the markers for the scatter points.
+        sample
+            Float between 0 (no observations) and 1 (all observations) determining the fraction of observations that should be plotted.
+            Smaller values can speed up the plotting process.
         x_label
             Label for x-axis.
         y_label
@@ -271,7 +281,12 @@ class GAM:
         for times, counts in zip(times_fitted, counts_fitted):
             if log_scale:
                 counts = np.log1p(counts)
-            plt.scatter(times, counts, s=5)
+            ind_to_plot = np.random.choice(
+                times.shape[0], size=int(times.shape[0] * sample), replace=False
+            )
+            plt.scatter(
+                times[ind_to_plot], counts[ind_to_plot], s=marker_size, alpha=alpha
+            )
 
         for times, counts, id in zip(times_pred, counts_pred, lineage_id):
             if log_scale:
