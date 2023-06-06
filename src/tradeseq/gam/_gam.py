@@ -254,15 +254,15 @@ class GAM:
 
         times_pred = []
         counts_pred = []
-        for id in lineage_id:
+        for id, time_fitted in zip(lineage_id, times_fitted):
             equally_spaced = np.linspace(
-                times_fitted[id].min(), times_fitted[id].max(), resolution
+                time_fitted.min(), time_fitted.max(), resolution
             )
             times_pred.append(equally_spaced)
 
             lineage_pred = (
                 np.zeros(resolution, dtype=int) + id
-            )  # assign every predciton point to lineage with lineage id: id
+            )  # assign every prediction point to lineage with lineage id: id
 
             counts_pred.append(
                 self.predict(gene_id, lineage_pred, equally_spaced, log_scale=False)
