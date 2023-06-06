@@ -216,8 +216,10 @@ class GAM:
         resolution: int = 200,
         knot_locations: bool = True,
         log_scale: bool = False,
+        sample: float = 1,
         x_label: str = "pseudotime",
         y_label: str = "gene expression",
+        **kwargs,
     ):
         """Plot gene counts and fitted smoothers.
 
@@ -234,10 +236,15 @@ class GAM:
             Boolean indicating whether knot locations should be plotted as dashed vertical lines.
         log_scale
             Boolean indicating whether counts and smoothers should be plotted in log1p scale.
+        sample
+            Float between 0 (no observations) and 1 (all observations) determining the fraction of observations that should be plotted.
+            Smaller values can speed up the plotting process.
         x_label
             Label for x-axis.
         y_label
             Label for y-axis.
+        kwargs
+            Additional arguments passed to the pyplot scatter function
         """
         n_lineages = self._n_lineages
         if lineage_id is None:
@@ -271,7 +278,14 @@ class GAM:
         for times, counts in zip(times_fitted, counts_fitted):
             if log_scale:
                 counts = np.log1p(counts)
-            plt.scatter(times, counts, s=5)
+            obs_mask = np.random.choice(
+                times.shape[0], size=int(times.shape[0] * sample), replace=False
+            )
+
+            if "s" not in kwargs:
+                # set default marker size to 5
+                kwargs["s"] = 5
+            plt.scatter(times[obs_mask], counts[obs_mask], **kwargs)
 
         for times, counts, id in zip(times_pred, counts_pred, lineage_id):
             if log_scale:
