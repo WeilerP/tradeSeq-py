@@ -254,21 +254,21 @@ class GAM:
 
         times_fitted = []
         counts_fitted = []
-        for id in lineage_ids:
-            obs_mask = self._lineage_assignment[:, id] == 1
-            times_fitted.append(self._get_pseudotime()[obs_mask, id])
+        for lineage_id in lineage_ids:
+            obs_mask = self._lineage_assignment[:, lineage_id] == 1
+            times_fitted.append(self._get_pseudotime()[obs_mask, lineage_id])
             counts_fitted.append(self._get_counts()[0][obs_mask, var_id])
 
         times_pred = []
         counts_pred = []
-        for id, time_fitted in zip(lineage_ids, times_fitted):
+        for lineage_id, time_fitted in zip(lineage_ids, times_fitted):
             equally_spaced = np.linspace(
                 time_fitted.min(), time_fitted.max(), resolution
             )
             times_pred.append(equally_spaced)
 
             lineage_pred = (
-                np.zeros(resolution, dtype=int) + id
+                np.zeros(resolution, dtype=int) + lineage_id
             )  # assign every prediction point to lineage with lineage id: id
 
             counts_pred.append(
@@ -287,10 +287,10 @@ class GAM:
                 kwargs["s"] = 5
             plt.scatter(times[obs_mask], counts[obs_mask], **kwargs)
 
-        for times, counts, id in zip(times_pred, counts_pred, lineage_ids):
+        for times, counts, lineage_id in zip(times_pred, counts_pred, lineage_ids):
             if log_scale:
                 counts = np.log1p(counts)
-            plt.plot(times, counts, label=f"lineage {self.lineage_names[id]}")
+            plt.plot(times, counts, label=f"lineage {self.lineage_names[lineage_id]}")
 
         # Plot knot locations
         if knot_locations:
