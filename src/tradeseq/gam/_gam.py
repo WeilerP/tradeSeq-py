@@ -57,7 +57,7 @@ class GAM:
         self._n_lineages = n_lineages
 
         self._model: Optional[List[_backend.GAM]] = None
-        self._genes: List[str] = None
+        self._var_names: List[str] = None
 
         self.lineage_names: Optional[List[str]] = None
 
@@ -569,7 +569,7 @@ class GAM:
         pseudotimes = self._get_pseudotime()
 
         use_raw = False
-        counts, self._genes = self._get_counts(use_raw)
+        counts, self._var_names = self._get_counts(use_raw)
 
         if self._offset_key is None:
             self._offset = _calculate_offset(counts)

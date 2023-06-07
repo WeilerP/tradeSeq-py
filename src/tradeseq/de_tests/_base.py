@@ -96,7 +96,7 @@ class WithinLineageTest(DifferentialExpressionTest):
         pseudotimes_b = np.concatenate(pseudotimes_b)
 
         for var_id in self._model.get_fitted_indices():
-            var_name = self._model._genes[var_id]
+            var_name = self._model._var_names[var_id]
             sigma = self._model.get_covariance(var_id)
 
             pred_a = self._model.predict(
@@ -187,7 +187,7 @@ class BetweenLineageTest(DifferentialExpressionTest):
         pseudotimes = np.concatenate(pseudotimes)
 
         for var_id in self._model.get_fitted_indices():
-            var_name = self._model._genes[var_id]
+            var_name = self._model._var_names[var_id]
             sigma = self._model.get_covariance(var_id)
 
             predictions = self._model.predict(
