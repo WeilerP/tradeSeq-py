@@ -118,7 +118,7 @@ def _assign_pseudotimes(pseudotimes: np.ndarray):
     Parameters
     ----------
     pseudotimes
-        A ``n_cells`` x ``n_lineage`` np.ndarray containing pseudotimes for every cell and lineage.
+        A ``n_obs`` x ``n_lineage`` np.ndarray containing pseudotimes for every cell and lineage.
     """
     np_cv_rules = default_converter + numpy2ri.converter
     with localconverter(np_cv_rules):
@@ -140,7 +140,7 @@ def _assign_lineages(w_sample: np.ndarray):
     Parameters
     ----------
     w_sample
-        A ``n_cells`` x ``n_lineage`` np.ndarray where each row contains exactly one `1` (the assigned lineage).
+        A ``n_obs`` x ``n_lineage`` np.ndarray where each row contains exactly one `1` (the assigned lineage).
         and `0` everywhere else.
     """
     np_cv_rules = default_converter + numpy2ri.converter
@@ -161,7 +161,7 @@ def _assign_offset(offset: np.ndarray):
     Parameters
     ----------
     offset
-        An np.ndarray of shape (``n_cells``,) containing cell specific offsets accounting for different library sizes.
+        An np.ndarray of shape (``n_obs``,) containing cell specific offsets accounting for different library sizes.
     """
     np_cv_rules = default_converter + numpy2ri.converter
     with localconverter(np_cv_rules):
@@ -183,14 +183,14 @@ def fit(
     Parameters
     ----------
     counts
-        A ``n_cell`` x ``n_genes`` dense np.ndarry containing gene counts for every cell.
+        A ``n_obs`` x ``n_vars`` dense np.ndarry containing gene counts for every cell.
     pseudotimes
-        A ``n_cells`` x ``n_lineage`` np.ndarray containing pseudotimes for every cell and lineage.
+        A ``n_obs`` x ``n_lineage`` np.ndarray containing pseudotimes for every cell and lineage.
     w_sample
-        A ``n_cells`` x ``n_lineage`` np.ndarray where each row contains exactly one `1` (the assigned lineage).
+        A ``n_obs`` x ``n_lineage`` np.ndarray where each row contains exactly one `1` (the assigned lineage).
         and `0` everywhere else.
     offset
-        An np.ndarray of shape (``n_cells``,) containing cell specific offsets accounting for different library
+        An np.ndarray of shape (``n_obs``,) containing cell specific offsets accounting for different library
         sizes.
     knots
         Location of knots used for fitting the splines in the GAM.
