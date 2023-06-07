@@ -212,7 +212,7 @@ class GAM:
     def plot(
         self,
         var_id: int,
-        lineage_id: Optional[Union[List[int], int]] = None,
+        lineage_ids: Optional[Union[List[int], int]] = None,
         resolution: int = 200,
         knot_locations: bool = True,
         log_scale: bool = False,
@@ -227,7 +227,7 @@ class GAM:
         ----------
         var_id
             Index of the gene that should be plotted.
-        lineage_id
+        lineage_ids
             Indices of plotted lineages. Can be a list or an int if only a single lineage should be plotted.
             If None, all lineages are plotted.
         resolution
@@ -247,21 +247,21 @@ class GAM:
             Additional arguments passed to the pyplot scatter function
         """
         n_lineages = self._n_lineages
-        if lineage_id is None:
-            lineage_id = list(range(n_lineages))
-        if isinstance(lineage_id, int):
-            lineage_id = [lineage_id]
+        if lineage_ids is None:
+            lineage_ids = list(range(n_lineages))
+        if isinstance(lineage_ids, int):
+            lineage_ids = [lineage_ids]
 
         times_fitted = []
         counts_fitted = []
-        for id in lineage_id:
+        for id in lineage_ids:
             obs_mask = self._lineage_assignment[:, id] == 1
             times_fitted.append(self._get_pseudotime()[obs_mask, id])
             counts_fitted.append(self._get_counts()[0][obs_mask, var_id])
 
         times_pred = []
         counts_pred = []
-        for id, time_fitted in zip(lineage_id, times_fitted):
+        for id, time_fitted in zip(lineage_ids, times_fitted):
             equally_spaced = np.linspace(
                 time_fitted.min(), time_fitted.max(), resolution
             )
@@ -287,7 +287,7 @@ class GAM:
                 kwargs["s"] = 5
             plt.scatter(times[obs_mask], counts[obs_mask], **kwargs)
 
-        for times, counts, id in zip(times_pred, counts_pred, lineage_id):
+        for times, counts, id in zip(times_pred, counts_pred, lineage_ids):
             if log_scale:
                 counts = np.log1p(counts)
             plt.plot(times, counts, label=f"lineage {self.lineage_names[id]}")
