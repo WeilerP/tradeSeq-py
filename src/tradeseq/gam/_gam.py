@@ -209,6 +209,7 @@ class GAM:
         self.check_is_fitted()
         return [ind for ind, gam in enumerate(self._model) if gam.fitted]
 
+    # TODO: Add option to pass axes class
     def plot(
         self,
         var_id: int,
