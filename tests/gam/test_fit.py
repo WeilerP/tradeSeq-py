@@ -17,13 +17,13 @@ class TestGAMFitting:
             "tests/_data/tradeseqTutorialData.h5ad"
         )  # Data is modified such that it has deterministic weights
         gam = GAM(adata, 2, "pseudotime", "lineage")
-        cell_weights, _ = gam._get_lineage()
+        obs_weights, _ = gam._get_lineage()
         pseudotimes = gam._get_pseudotime()
         counts, _ = gam._get_counts()
         gam._lineage_assignment, _ = gam._assign_cells_to_lineages()
         knots = gam._get_knots(n_knots)
         offset = _calculate_offset(counts)
-        tradeseq = TradeseqR(counts, pseudotimes, cell_weights, n_knots)
+        tradeseq = TradeseqR(counts, pseudotimes, obs_weights, n_knots)
         knots_tradeseq = tradeseq.get_knots()
         offset_tradeseq = tradeseq.get_offset()
         assert np.allclose(knots, knots_tradeseq)
@@ -53,7 +53,7 @@ class TestGAMFitting:
         lineage_assignment = np.zeros((n_predictions,), dtype=int)
         pseudotime = np.linspace(0.0, 5, n_predictions)
         prediction = gam.predict(
-            gene_id=0, lineage_assignment=lineage_assignment, pseudotimes=pseudotime
+            var_id=0, lineage_assignment=lineage_assignment, pseudotimes=pseudotime
         )
         assert np.allclose(prediction, constant)
 
@@ -83,7 +83,7 @@ class TestGAMFitting:
         lineage_assignment = np.zeros((n_predictions,), dtype=int)
         pseudotime = np.linspace(1.0, 2, n_predictions)
         prediction = gam.predict(
-            gene_id=0,
+            var_id=0,
             lineage_assignment=lineage_assignment,
             pseudotimes=pseudotime,
             log_scale=True,

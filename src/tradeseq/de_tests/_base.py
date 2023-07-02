@@ -95,22 +95,22 @@ class WithinLineageTest(DifferentialExpressionTest):
         pseudotimes_a = np.concatenate(pseudotimes_a)
         pseudotimes_b = np.concatenate(pseudotimes_b)
 
-        for gene_id in self._model.get_fitted_indices():
-            gene_name = self._model._genes[gene_id]
-            sigma = self._model.get_covariance(gene_id)
+        for var_id in self._model.get_fitted_indices():
+            var_name = self._model._var_names[var_id]
+            sigma = self._model.get_covariance(var_id)
 
             pred_a = self._model.predict(
-                gene_id, lineage_ids, pseudotimes_a, log_scale=True
+                var_id, lineage_ids, pseudotimes_a, log_scale=True
             )
             pred_b = self._model.predict(
-                gene_id, lineage_ids, pseudotimes_b, log_scale=True
+                var_id, lineage_ids, pseudotimes_b, log_scale=True
             )
             pred_diff = pred_a - pred_b
             pred_fold_change = pred_diff.copy() * np.log2(np.e)  # change basis to log2
             _fold_change_cutoff(pred_diff, l2fc)
 
-            lpmatrix_a = self._model.get_lpmatrix(gene_id, lineage_ids, pseudotimes_a)
-            lpmatrix_b = self._model.get_lpmatrix(gene_id, lineage_ids, pseudotimes_b)
+            lpmatrix_a = self._model.get_lpmatrix(var_id, lineage_ids, pseudotimes_a)
+            lpmatrix_b = self._model.get_lpmatrix(var_id, lineage_ids, pseudotimes_b)
             lpmatrix_diff = lpmatrix_a - lpmatrix_b
 
             if lineage_test:
@@ -122,7 +122,7 @@ class WithinLineageTest(DifferentialExpressionTest):
                         lpmatrix_diff[lineage_ids == lineage],
                         sigma,
                     )
-                    result[lineage_name][gene_name] = (
+                    result[lineage_name][var_name] = (
                         wald_stat,
                         df,
                         p_value,
@@ -132,7 +132,7 @@ class WithinLineageTest(DifferentialExpressionTest):
             if global_test:
                 global_fold_change = np.mean(pred_fold_change)
                 wald_stat, df, p_value = _wald_test(pred_diff, lpmatrix_diff, sigma)
-                result["globally"][gene_name] = (
+                result["globally"][var_name] = (
                     wald_stat,
                     df,
                     p_value,
@@ -186,14 +186,14 @@ class BetweenLineageTest(DifferentialExpressionTest):
         )
         pseudotimes = np.concatenate(pseudotimes)
 
-        for gene_id in self._model.get_fitted_indices():
-            gene_name = self._model._genes[gene_id]
-            sigma = self._model.get_covariance(gene_id)
+        for var_id in self._model.get_fitted_indices():
+            var_name = self._model._var_names[var_id]
+            sigma = self._model.get_covariance(var_id)
 
             predictions = self._model.predict(
-                gene_id, lineage_ids, pseudotimes, log_scale=True
+                var_id, lineage_ids, pseudotimes, log_scale=True
             )
-            lpmatrix = self._model.get_lpmatrix(gene_id, lineage_ids, pseudotimes)
+            lpmatrix = self._model.get_lpmatrix(var_id, lineage_ids, pseudotimes)
 
             predictions_comb = [
                 predictions[lineage_ids == lineage_a]
@@ -231,14 +231,14 @@ class BetweenLineageTest(DifferentialExpressionTest):
                     )
                     result[
                         f"between {self._model.lineage_names[lineage_a]} and {self._model.lineage_names[lineage_b]}"
-                    ][gene_name] = (wald_stat, df, p_value, fold_change)
+                    ][var_name] = (wald_stat, df, p_value, fold_change)
 
             if global_test:
                 pred = np.concatenate(predictions_comb)
                 lpmatrix = np.concatenate(lpmatrices_comb, axis=0)
                 wald_stat, df, p_value = _wald_test(pred, lpmatrix, sigma)
                 global_fold_change = np.mean(fold_changes)
-                result["globally"][gene_name] = (
+                result["globally"][var_name] = (
                     wald_stat,
                     df,
                     p_value,

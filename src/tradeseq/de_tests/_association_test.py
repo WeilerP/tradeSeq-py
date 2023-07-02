@@ -49,10 +49,10 @@ class AssociationTest(WithinLineageTest):
 
         pseudotimes_a = []
         pseudotimes_b = []
-        lineages = np.arange(self._model._n_lineages)
+        lineage_ids = np.arange(self._model._n_lineages)
 
         if contrast_type == "start":
-            for lineage_id in lineages:
+            for lineage_id in lineage_ids:
                 pseudotimes_a.append(np.repeat(start[lineage_id], n_points))
                 pseudotimes_b.append(
                     np.linspace(
@@ -61,7 +61,7 @@ class AssociationTest(WithinLineageTest):
                 )
 
         elif contrast_type == "end":
-            for lineage_id in lineages:
+            for lineage_id in lineage_ids:
                 pseudotimes_a.append(np.repeat(end[lineage_id], n_points))
                 pseudotimes_b.append(
                     np.linspace(
@@ -70,7 +70,7 @@ class AssociationTest(WithinLineageTest):
                 )
 
         elif contrast_type == "consecutive":
-            for lineage_id in lineages:
+            for lineage_id in lineage_ids:
                 equally_spaced = np.linspace(
                     start=start[lineage_id], stop=end[lineage_id], num=n_points
                 )
@@ -83,5 +83,5 @@ class AssociationTest(WithinLineageTest):
             )
 
         return self._test(
-            pseudotimes_a, pseudotimes_b, lineages, lineage_test, global_test, l2fc
+            pseudotimes_a, pseudotimes_b, lineage_ids, lineage_test, global_test, l2fc
         )

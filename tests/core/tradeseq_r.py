@@ -16,14 +16,14 @@ class TradeseqR:
         self,
         counts: np.ndarray,
         pseudotime: np.ndarray,
-        cell_weights: np.ndarray,
+        obs_weights: np.ndarray,
         n_knots: int,
     ):
         np_cv_rules = default_converter + numpy2ri.converter
         with localconverter(np_cv_rules):
             ro.globalenv["counts"] = counts.T
             ro.globalenv["pseudotime"] = pseudotime
-            ro.globalenv["cellWeights"] = cell_weights
+            ro.globalenv["cellWeights"] = obs_weights
             ro.globalenv["n_knots"] = n_knots
 
         ro.r(

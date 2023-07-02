@@ -57,7 +57,7 @@ class GAM:
         self._n_lineages = n_lineages
 
         self._model: Optional[List[_backend.GAM]] = None
-        self._genes: List[str] = None
+        self._var_names: List[str] = None
 
         self.lineage_names: Optional[List[str]] = None
 
@@ -73,10 +73,10 @@ class GAM:
         self._offset_key = offset_key
         self._layer_key = layer_key
 
-    # TODO: change so that list of gene_ids or gene_names are accepted
+    # TODO: change so that list of var_ids or var_names are accepted
     def predict(
         self,
-        gene_id: int,
+        var_id: int,
         lineage_assignment: np.ndarray,
         pseudotimes: np.ndarray,
         log_scale: bool = False,
@@ -85,7 +85,7 @@ class GAM:
 
         Parameters
         ----------
-        gene_id
+        var_id
             Index of the gene for which prediction is made.
         lineage_assignment
             A (``n_predictions``,) np.ndarray where each integer entry indicates the lineage index for the prediction point.
@@ -124,18 +124,18 @@ class GAM:
         else:
             return_type = "response"
 
-        return self._model[gene_id].predict(
+        return self._model[var_id].predict(
             lineage_indicator, pseudotimes, offsets, return_type
         )
 
     def get_lpmatrix(
-        self, gene_id: int, lineage_assignment: np.ndarray, pseudotimes: np.ndarray
+        self, var_id: int, lineage_assignment: np.ndarray, pseudotimes: np.ndarray
     ) -> np.ndarray:
         """Return linear predictor matrix of the GAM for the given gene with the given parameters.
 
         Parameters
         ----------
-        gene_id
+        var_id
             Index of the gene for which the lpmatrix is returned.
         lineage_assignment
             A (``n_predictions``,) np.ndarray where each integer entry indicates the lineage index for the prediction point.
@@ -167,16 +167,16 @@ class GAM:
         # offsets are just mean offsets of fitted data
         offsets = np.repeat(self._offset.mean(), n_predictions)
 
-        return self._model[gene_id].predict(
+        return self._model[var_id].predict(
             lineage_indicator, pseudotimes, offsets, "lpmatrix"
         )
 
-    def get_covariance(self, gene_id: int) -> np.ndarray:
+    def get_covariance(self, var_id: int) -> np.ndarray:
         """Return covariance matrix of the parameters fitted for the GAM for the given gene.
 
         Parameters
         ----------
-        gene_id
+        var_id
             Index of the gene for which the covariance matrix of the parameters of the GAM are returned.
 
         Returns
@@ -184,9 +184,9 @@ class GAM:
         A (``n_parameters``,``n_parameters``) np.ndarray, the covariance matrix.
         """
         self.check_is_fitted()
-        self._model[gene_id].check_fitted()
+        self._model[var_id].check_fitted()
 
-        return self._model[gene_id].covariance_matrix
+        return self._model[var_id].covariance_matrix
 
     def get_aic(self) -> List[float]:
         """Get Akaike information criterion (AIC) for each fitted GAM.
@@ -211,8 +211,8 @@ class GAM:
 
     def plot(
         self,
-        gene_id: int,
-        lineage_id: Optional[Union[List[int], int]] = None,
+        var_id: int,
+        lineage_ids: Optional[Union[List[int], int]] = None,
         resolution: int = 200,
         knot_locations: bool = True,
         log_scale: bool = False,
@@ -227,9 +227,9 @@ class GAM:
 
         Parameters
         ----------
-        gene_id
+        var_id
             Index of the gene that should be plotted.
-        lineage_id
+        lineage_ids
             Indices of plotted lineages. Can be a list or an int if only a single lineage should be plotted.
             If None, all lineages are plotted.
         resolution
@@ -254,32 +254,32 @@ class GAM:
             Additional arguments passed to the pyplot scatter function
         """
         n_lineages = self._n_lineages
-        if lineage_id is None:
-            lineage_id = list(range(n_lineages))
-        if isinstance(lineage_id, int):
-            lineage_id = [lineage_id]
+        if lineage_ids is None:
+            lineage_ids = list(range(n_lineages))
+        if isinstance(lineage_ids, int):
+            lineage_ids = [lineage_ids]
 
         times_fitted = []
         counts_fitted = []
-        for id in lineage_id:
-            cell_mask = self._lineage_assignment[:, id] == 1
-            times_fitted.append(self._get_pseudotime()[cell_mask, id])
-            counts_fitted.append(self._get_counts()[0][cell_mask, gene_id])
+        for lineage_id in lineage_ids:
+            obs_mask = self._lineage_assignment[:, lineage_id] == 1
+            times_fitted.append(self._get_pseudotime()[obs_mask, lineage_id])
+            counts_fitted.append(self._get_counts()[0][obs_mask, var_id])
 
         times_pred = []
         counts_pred = []
-        for id, time_fitted in zip(lineage_id, times_fitted):
+        for lineage_id, time_fitted in zip(lineage_ids, times_fitted):
             equally_spaced = np.linspace(
                 time_fitted.min(), time_fitted.max(), resolution
             )
             times_pred.append(equally_spaced)
 
             lineage_pred = (
-                np.zeros(resolution, dtype=int) + id
+                np.zeros(resolution, dtype=int) + lineage_id
             )  # assign every prediction point to lineage with lineage id: id
 
             counts_pred.append(
-                self.predict(gene_id, lineage_pred, equally_spaced, log_scale=False)
+                self.predict(var_id, lineage_pred, equally_spaced, log_scale=False)
             )
 
         if colors is not None:
@@ -297,10 +297,10 @@ class GAM:
                 kwargs["s"] = 5
             plt.scatter(times[obs_mask], counts[obs_mask], **kwargs)
 
-        for times, counts, id in zip(times_pred, counts_pred, lineage_id):
+        for times, counts, lineage_id in zip(times_pred, counts_pred, lineage_ids):
             if log_scale:
                 counts = np.log1p(counts)
-            plt.plot(times, counts, label=f"lineage {self.lineage_names[id]}")
+            plt.plot(times, counts, label=f"lineage {self.lineage_names[lineage_id]}")
 
         # Plot knot locations
         if knot_locations:
@@ -478,19 +478,19 @@ class GAM:
 
         Returns
         -------
-            A ``n_cells`` x ``n_lineage`` np.ndarray where each row contains exactly one 1 (the assigned lineage)
+            A ``n_obs`` x ``n_lineage`` np.ndarray where each row contains exactly one 1 (the assigned lineage)
             and 0 everywhere else and a list of lineage names.
         """
-        cell_weights, lineage_names = self._get_lineage()
-        if not _check_cell_weights(cell_weights):
+        obs_weights, lineage_names = self._get_lineage()
+        if not _check_obs_weights(obs_weights):
             raise ValueError(
                 "Cell weights have to be non-negative and cells need to have at least one positive cell weight"
             )
 
-        def sample_lineage(cell_weights_row):
-            return np.random.multinomial(1, cell_weights_row / np.sum(cell_weights_row))
+        def sample_lineage(obs_weights_row):
+            return np.random.multinomial(1, obs_weights_row / np.sum(obs_weights_row))
 
-        lineage_assignment = np.apply_along_axis(sample_lineage, 1, cell_weights)
+        lineage_assignment = np.apply_along_axis(sample_lineage, 1, obs_weights)
 
         if any(lineage_assignment.sum(axis=0) == 0):
             lineage_name = np.array(lineage_names)[lineage_assignment.sum(axis=0) == 0][
@@ -515,7 +515,7 @@ class GAM:
 
         Returns
         -------
-            A ``n_cell`` x ``n_lineage`` dense np.ndarry containing gene counts for every cell and a list containing the
+            A ``n_obs`` x ``n_lineage`` dense np.ndarry containing gene counts for every cell and a list containing the
             gene names.
         """
         # TODO: maybe add support for gene subsets?
@@ -581,7 +581,7 @@ class GAM:
         pseudotimes = self._get_pseudotime()
 
         use_raw = False
-        counts, self._genes = self._get_counts(use_raw)
+        counts, self._var_names = self._get_counts(use_raw)
 
         if self._offset_key is None:
             self._offset = _calculate_offset(counts)
@@ -724,14 +724,14 @@ def _indices_to_indicator_matrix(indices: np.ndarray, n_indices: int):
     return (indices.reshape(-1, 1) == list(range(n_indices))).astype(int)
 
 
-def _check_cell_weights(cell_weights: np.ndarray) -> bool:
+def _check_obs_weights(obs_weights: np.ndarray) -> bool:
     """Check if all cell weights are non-negative and if every cell has at least one positive cell weight.
 
     Parameters
     ----------
     __________
-    cell_weights:
-        Array of shape ``n_cells`` x ``_lineages`` containing cell to lineage weights.
+    obs_weights:
+        Array of shape ``n_obs`` x ``n_lineages`` containing cell to lineage weights.
 
     Returns
     -------
@@ -739,7 +739,7 @@ def _check_cell_weights(cell_weights: np.ndarray) -> bool:
         Boolean indicating whether all cell weights are non-negative and if every cell has at least one positive
         cell weight.
     """
-    return (cell_weights >= 0).all() and (np.sum(cell_weights, axis=1) > 0).all()
+    return (obs_weights >= 0).all() and (np.sum(obs_weights, axis=1) > 0).all()
 
 
 def _calculate_offset(counts: np.ndarray) -> np.ndarray:
@@ -750,11 +750,11 @@ def _calculate_offset(counts: np.ndarray) -> np.ndarray:
     Parameters
     ----------
     counts
-        A ``n_cell`` x ``n_lineage`` np.ndarray containing gene counts for every cell
+        A ``n_obs`` x ``n_lineage`` np.ndarray containing gene counts for every cell
 
     Returns
     -------
-    An np.ndarray of shape (``n_cell``,) containing an offset for each cell.
+    An np.ndarray of shape (``n_obs``,) containing an offset for each cell.
     """
     norm_factors = tmm_norm_factors(counts.T)
     library_size = counts.sum(axis=1) * norm_factors.flatten()
