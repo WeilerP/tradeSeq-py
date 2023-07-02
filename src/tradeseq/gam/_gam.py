@@ -219,6 +219,8 @@ class GAM:
         sample: float = 1,
         x_label: str = "pseudotime",
         y_label: str = "gene expression",
+        colors: Optional[List] = None,
+        save: Optional[str] = None,
         **kwargs,
     ):
         """Plot gene counts and fitted smoothers.
@@ -243,6 +245,11 @@ class GAM:
             Label for x-axis.
         y_label
             Label for y-axis.
+        colors
+            List of matplotlib colors used for plotting lineages. If None, the default color wheel ``plt.rcParams['axes.prop_cycle']`` is
+            used.
+        save
+            Filepath of location where to save plot. File type is inferred from the filepath. If None, plot is not saved.
         kwargs
             Additional arguments passed to the pyplot scatter function
         """
@@ -275,6 +282,9 @@ class GAM:
                 self.predict(gene_id, lineage_pred, equally_spaced, log_scale=False)
             )
 
+        if colors is not None:
+            plt.gca().set_prop_cycle("color", colors)
+
         for times, counts in zip(times_fitted, counts_fitted):
             if log_scale:
                 counts = np.log1p(counts)
@@ -296,8 +306,8 @@ class GAM:
         if knot_locations:
             y_max = max(
                 [
-                    max([pred.max() for pred in counts_pred]),
-                    max([fitted.max() for fitted in counts_fitted]),
+                    max([pred.max(initial=0) for pred in counts_pred]),
+                    max([fitted.max(initial=0) for fitted in counts_fitted]),
                 ]
             )
             if log_scale:
@@ -309,6 +319,8 @@ class GAM:
         plt.xlabel(x_label)
 
         plt.legend()
+        if save is not None:
+            plt.savefig(save)
         plt.show()
 
     def check_is_fitted(self):
