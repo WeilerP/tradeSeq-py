@@ -37,6 +37,7 @@ jobs:
             - name: Check pre-commit compatibility
               run: pre-commit run --all-files --show-diff-on-failure
 
+    # TODO: Add ubuntu-latest
     # Run unit tests
     test:
         needs: linting
@@ -44,8 +45,8 @@ jobs:
         strategy:
             fail-fast: false
             matrix:
-                os: [ubuntu-latest, macos-latest]
-                python-version: [3.9]
+                os: [macos-latest]
+                python-version: ["3.8", "3.9", "3.10"]
         steps:
             - uses: actions/checkout@v2
             - name: Set up Python ${{ matrix.python-version }}
