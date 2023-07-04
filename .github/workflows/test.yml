@@ -62,7 +62,7 @@ jobs:
             - name: Install R dependecies
               run: |
                   install.packages(c("BiocManager"))
-                  BiocManager::install('BiocParallel')
+                  BiocManager::install("BiocParallel")
                   BiocManager::install("tradeSeq")
               shell: Rscript {0}
             - name: Unit tests
