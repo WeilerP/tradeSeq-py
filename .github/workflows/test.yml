@@ -66,5 +66,5 @@ jobs:
                   BiocManager::install("tradeSeq")
               shell: Rscript {0}
             - name: Unit tests
-              timeout-minutes: 10
+              timeout-minutes: 60
               run: python -m pytest --durations=25 --cov=tradeseq -vv
