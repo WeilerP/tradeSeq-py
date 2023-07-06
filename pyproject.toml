@@ -57,7 +57,10 @@ dependencies = [
 
 [project.optional-dependencies]
 dev = [
-    "pre-commit>=2.16.0"
+    "hypothesis",
+    "pre-commit>=2.16.0",
+    "pytest",
+    "pytest-cov"
 ]
 test = [
     "hypothesis",
