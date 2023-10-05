@@ -13,21 +13,20 @@ from tradeseq.gam import GAM
 
 
 class DifferentialExpressionTest(ABC):
-    """Abstract base class for a DifferntialExpressionTest."""
+    """Abstract base class for a DifferntialExpressionTest.
+
+    Parameters
+    ----------
+    model
+        Fitted GAM class.
+    """
 
     def __init__(self, model: GAM):
-        """Initialize WithinLineageTest class.
-
-        Parameters
-        ----------
-        model
-            Fitted GAM class.
-        """
         self._model = model
 
     @abstractmethod
     def __call__(self, **kwargs):
-        """Perform the DifferntialExpressionTest."""
+        """Perform the DifferentialExpressionTest."""
 
     def _get_start_pseudotime(self) -> List[float]:
         """Get pseudotime values for the start of every lineage.

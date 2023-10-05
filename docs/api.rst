@@ -3,13 +3,10 @@
 API
 ===
 
-Import the submodules of tradeseq as::
+Import tradeseq as::
 
-    import tradeseq.de_tests
+    import tradeseq
 
-and::
-
-    import tradeseq.gam
 
 Differential Expression Tests
 -----------------------------

@@ -13,19 +13,18 @@ stats = importr("stats")
 
 
 class GAM:
-    """GAM backend class encapsulating R gam object."""
+    """GAM backend class encapsulating R gam object.
+
+    Parameters
+    ----------
+    gam
+        rpy2 representation of fitted mgcv GAM object. If no GAM could be fitted:
+        null or False can be given as parameter.
+    converged
+        Indicator whether the fitting procedure did converge.
+    """
 
     def __init__(self, gam, converged: bool = True):
-        """Initialize GAM object.
-
-        Parmaeters
-        ----------
-        gam
-            rpy2 representation of fitted mgcv GAM object. If no GAM could be fitted:
-            null or False can be given as parameter.
-        converged
-            Indicator whether the fitting procedure did converge.
-        """
         if not gam:
             self.fitted = False
             self.converged = False

@@ -56,7 +56,6 @@ templates_path = ["_templates"]
 autosummary_generate = True
 autodoc_member_order = "alphabetical"
 autodoc_typehints = "description"
-autoclass_content = "both"
 napoleon_google_docstring = False
 napoleon_numpy_docstring = True
 
