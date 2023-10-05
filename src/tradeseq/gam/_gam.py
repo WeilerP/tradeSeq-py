@@ -20,6 +20,26 @@ class GAM:
 
     First, the fit method should be called to fit GAMs for (a subset of) genes.
     Then, one can make predictions with and plot the fitted GAMs.
+
+    Parameters
+    ----------
+    adata
+        AnnData object containing the gene counts, the cell to lineage weights, and the pseudotimes.
+    n_lineages
+        Number of lineages.
+    time_key
+        Key for pseudotime values,
+        ``adata`` has to contain pseudotime values for every lineage
+        in ``adata.obsm[time_key]`` or ``adata.obs[time_key]``.
+    weights_key
+        Key for cell to lineage weights. ``adata`` has to contain a weights object of
+        shape (``adata.n_obs``, n_lineages) in ``adata.obsm[weights_key]``.
+    offset_key
+        Key for a cell specific offset that accounts for differences in sequencing depth. ``adata`` has to contain
+        an offset object of shape (``adata.n_obs``,) in the column `òffset_key`` in ``adata.obs``.
+    layer_key
+        Key for the layer from which to retrieve the counts in ``adata`` If ``None``, ``adata.X`` is
+        used.
     """
 
     def __init__(
@@ -31,28 +51,6 @@ class GAM:
         offset_key: Optional[str] = None,
         layer_key: Optional[str] = None,
     ):
-        """Initialize GAM class.
-
-        Parameters
-        ----------
-        adata
-            AnnData object containing the gene counts, the cell to lineage weights, and the pseudotimes.
-        n_lineages
-            Number of lineages.
-        time_key
-            Key for pseudotime values,
-            ``adata`` has to contain pseudotime values for every lineage
-            in ``adata.obsm[time_key]`` or ``adata.obs[time_key]``.
-        weights_key
-            Key for cell to lineage weights. ``adata`` has to contain a weights object of
-            shape (``adata.n_obs``, n_lineages) in ``adata.obsm[weights_key]``.
-        offset_key
-            Key for a cell specific offset that accounts for differences in sequencing depth. ``adata`` has to contain
-            an offset object of shape (``adata.n_obs``,) in the column `òffset_key`` in ``adata.obs``.
-        layer_key
-            Key for the layer from which to retrieve the counts in ``adata`` If ``None``, ``adata.X`` is
-            used.
-        """
         self._adata: AnnData = adata
         self._n_lineages = n_lineages
 
@@ -636,8 +634,9 @@ class GAM:
 
         Returns
         -------
-        Pandas DataFrame containing AIC of the sampled genes for the different choices for n_knots and the mean AIC,
-        the relative mean AIC and the number of knots that have the optimal AIC for this value of n_knots.
+        pandas.DataFrame
+            Pandas DataFrame containing AIC of the sampled genes for the different choices for n_knots and the mean AIC,
+            the relative mean AIC and the number of knots that have the optimal AIC for this value of n_knots.
         """
         if any(n_knots < 3 for n_knots in n_knots_options):
             raise RuntimeError(
