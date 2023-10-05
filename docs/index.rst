@@ -13,4 +13,6 @@ caused by relying on Python packages instead of their R counterparts in some cas
    :hidden:
 
    installation
+   notebooks/tutorial
    api
+   references

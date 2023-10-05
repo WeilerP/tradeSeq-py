@@ -33,8 +33,21 @@ extensions = [
     "sphinx.ext.napoleon",
     "sphinx.ext.viewcode",
     "sphinx.ext.autosummary",
+    "sphinxcontrib.bibtex",
     "sphinx_copybutton",
+    "myst_nb",
 ]
+
+master_doc = "index"
+pygments_style = "tango"
+pygments_dark_style = "monokai"
+
+nitpicky = True
+
+# bibliography
+bibtex_bibfiles = ["references.bib"]
+bibtex_reference_style = "author_year"
+bibtex_default_style = "alpha"
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ["_templates"]
@@ -46,6 +59,15 @@ autodoc_typehints = "description"
 autoclass_content = "both"
 napoleon_google_docstring = False
 napoleon_numpy_docstring = True
+
+# myst
+nb_execution_mode = "off"
+myst_enable_extensions = [
+    "colon_fence",
+    "dollarmath",
+    "amsmath",
+]
+myst_heading_anchors = 2
 
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
